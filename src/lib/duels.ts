@@ -67,3 +67,60 @@ export async function deleteDuel(duelId: string) {
 
   if (error) throw error;
 }
+
+export async function upsertReaction(duelId: string, userId: string, reactionType: 'agree' | 'disagree' | 'fire') {
+  // Check if user already has this exact reaction — if so, delete it (toggle off)
+  const { data: existing } = await supabase
+    .from('reactions')
+    .select('id, reaction_type')
+    .eq('duel_id', duelId)
+    .eq('user_id', userId)
+    .single();
+
+  if (existing) {
+    if (existing.reaction_type === reactionType) {
+      // Toggle off
+      await supabase.from('reactions').delete().eq('id', existing.id);
+      return null;
+    } else {
+      // Switch reaction
+      await supabase.from('reactions').update({ reaction_type: reactionType }).eq('id', existing.id);
+      return reactionType;
+    }
+  } else {
+    // New reaction
+    await supabase.from('reactions').insert({ duel_id: duelId, user_id: userId, reaction_type: reactionType });
+    return reactionType;
+  }
+}
+
+export async function getReactions(duelId: string) {
+  const { data } = await supabase
+    .from('reactions')
+    .select('reaction_type, user_id')
+    .eq('duel_id', duelId);
+  return data || [];
+}
+
+export async function getComments(duelId: string) {
+  const { data } = await supabase
+    .from('comments')
+    .select('id, content, created_at, user_id, profiles(display_name)')
+    .eq('duel_id', duelId)
+    .order('created_at', { ascending: true });
+  return data || [];
+}
+
+export async function addComment(duelId: string, userId: string, content: string) {
+  const { data, error } = await supabase
+    .from('comments')
+    .insert({ duel_id: duelId, user_id: userId, content })
+    .select('id, content, created_at, user_id, profiles(display_name)')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteComment(commentId: string) {
+  await supabase.from('comments').delete().eq('id', commentId);
+}
