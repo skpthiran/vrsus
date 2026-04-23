@@ -94,33 +94,41 @@ export function ProfilePage() {
     navigate('/duel/results');
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+      {/* Profile Header Skeleton */}
+      {loading && (
+        <div className="flex-1 container mx-auto px-4 max-w-4xl py-8 space-y-8 animate-pulse">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-surface border border-border" />
+            <div className="space-y-2">
+              <div className="h-6 w-32 bg-surface rounded" />
+              <div className="h-4 w-48 bg-surface rounded" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-surface border border-border rounded-2xl" />)}
+          </div>
+          <div className="space-y-3">
+            {[1,2,3].map(i => <div key={i} className="h-32 bg-surface border border-border rounded-[2rem]" />)}
+          </div>
+        </div>
+      )}
 
-  // Guest view
-  if (!user) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center px-4 text-center">
-        <Ghost size={48} className="text-neutral-600 mb-4" />
-        <h2 className="text-2xl font-display font-bold mb-2">No Profile Yet</h2>
-        <p className="text-neutral-400 mb-6 max-w-sm">Sign in to save your duels, track your stats, and build your profile.</p>
-        <Link to="/auth">
-          <button className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-full font-semibold">
-            <LogIn size={18} />
-            Sign In
-          </button>
-        </Link>
-      </div>
-    );
-  }
+      {!loading && !user && (
+        <div className="flex-1 flex flex-col items-center justify-center px-4 text-center mt-20">
+          <Ghost size={48} className="text-neutral-600 mb-4" />
+          <h2 className="text-2xl font-display font-bold mb-2">No Profile Yet</h2>
+          <p className="text-neutral-400 mb-6 max-w-sm">Sign in to save your duels, track your stats, and build your profile.</p>
+          <Link to="/auth">
+            <button className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-full font-semibold">
+              <LogIn size={18} />
+              Sign In
+            </button>
+          </Link>
+        </div>
+      )}
 
-  return (
-    <div className="flex-1 container mx-auto px-4 max-w-4xl py-8 space-y-8">
+      {!loading && user && (
+        <div className="flex-1 container mx-auto px-4 max-w-4xl py-8 space-y-8">
 
       {/* Profile Header */}
       <div className="flex items-center justify-between">
@@ -218,11 +226,17 @@ export function ProfilePage() {
                 <div className="flex -space-x-3 flex-shrink-0">
                   {[record.previewA, record.previewB].map((img, i) => (
                     <div key={i} className={cn(
-                      "w-12 h-12 rounded-xl overflow-hidden border-2 border-background",
+                      "w-12 h-12 rounded-xl overflow-hidden border-2 border-background bg-neutral-900",
                       i === 1 && "relative"
                     )}>
                       {img ? (
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img 
+                          src={img} 
+                          alt="" 
+                          className="w-full h-full object-cover" 
+                          loading="lazy" 
+                          decoding="async" 
+                        />
                       ) : (
                         <div className="w-full h-full bg-neutral-800" />
                       )}

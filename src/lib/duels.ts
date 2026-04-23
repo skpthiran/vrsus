@@ -56,12 +56,13 @@ export async function getPublicDuels(limit = 20) {
   return data || [];
 }
 
-export async function getUserDuels(userId: string) {
+export async function getUserDuels(userId: string, limit = 20) {
   const { data, error } = await supabase
     .from('duels')
-    .select('*')
+    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, image_a_url, image_b_url')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
   if (error) throw error;
   return data || [];

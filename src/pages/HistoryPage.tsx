@@ -101,28 +101,29 @@ export function HistoryPage() {
     navigate('/duel/results');
   };
 
-  if (loading) return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
   return (
-    <div className="flex-1 container mx-auto px-4 max-w-6xl py-12">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
-        <div>
-          <h1 className="text-4xl font-display font-bold mb-2">Duel History</h1>
-          <p className="text-neutral-400">Review your past battles and AI insights.</p>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-display font-bold">History</h1>
         {history.length > 0 && (
-          <Button variant="ghost" onClick={handleClear} className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-12 px-6 rounded-2xl">
-            <Trash2 size={20} className="mr-2" />
-            Clear All
+          <Button variant="ghost" onClick={handleClear} className="text-neutral-400 hover:text-red-400">
+            <Trash2 size={18} className="mr-2" /> Clear All
           </Button>
         )}
       </div>
 
-      {history.length === 0 ? (
+      {/* Loading Skeleton */}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="aspect-[4/3] rounded-[2rem] bg-surface border border-border animate-pulse flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full border-4 border-white/5 border-t-white/20 animate-spin" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && history.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-24 h-24 bg-surface rounded-full flex items-center justify-center mb-6 border border-border">
             <Ghost size={48} className="text-neutral-600" />
@@ -178,8 +179,14 @@ function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete:
 
       {/* Side by Side Preview */}
       <div className="grid grid-cols-2 gap-2 h-40">
-        <div className="rounded-2xl overflow-hidden relative">
-          <img src={record.previewA} alt="A" className="w-full h-full object-cover" />
+        <div className="rounded-2xl overflow-hidden relative bg-neutral-900">
+          <img 
+            src={record.previewA} 
+            alt="A" 
+            className="w-full h-full object-cover" 
+            loading="lazy"
+            decoding="async"
+          />
           <div className="absolute top-2 left-2 w-5 h-5 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10">A</div>
           {record.winner === 'A' && (
             <div className="absolute bottom-2 right-2 p-1 bg-winner rounded-full shadow-lg">
@@ -187,8 +194,14 @@ function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete:
             </div>
           )}
         </div>
-        <div className="rounded-2xl overflow-hidden relative">
-          <img src={record.previewB} alt="B" className="w-full h-full object-cover" />
+        <div className="rounded-2xl overflow-hidden relative bg-neutral-900">
+          <img 
+            src={record.previewB} 
+            alt="B" 
+            className="w-full h-full object-cover" 
+            loading="lazy"
+            decoding="async"
+          />
           <div className="absolute top-2 left-2 w-5 h-5 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10">B</div>
           {record.winner === 'B' && (
             <div className="absolute bottom-2 right-2 p-1 bg-winner rounded-full shadow-lg">
