@@ -59,13 +59,41 @@ export async function getPublicDuels(limit = 20) {
 export async function getUserDuels(userId: string, limit = 20) {
   const { data, error } = await supabase
     .from('duels')
-    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, image_a_url, image_b_url, is_public')
+    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, image_a_url, image_b_url, is_public, reasons_for_win, weaknesses_of_loser')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
-  return data || [];
+  
+  return (data || []).map(d => ({
+    ...d,
+    scores: d.scores || { A: { total: 0 }, B: { total: 0 } },
+    reasons_for_win: d.reasons_for_win || [],
+    weaknesses_of_loser: d.weaknesses_of_loser || [],
+  }));
+}
+
+export async function getDuelById(duelId: string) {
+  const { data, error } = await supabase
+    .from('duels')
+    .select('*')
+    .eq('id', duelId)
+    .single();
+
+  if (error) {
+    console.error('getDuelById error:', error);
+    return null;
+  }
+
+  if (!data) return null;
+
+  return {
+    ...data,
+    scores: data.scores || { A: { total: 0 }, B: { total: 0 } },
+    reasons_for_win: data.reasons_for_win || [],
+    weaknesses_of_loser: data.weaknesses_of_loser || [],
+  };
 }
 
 export async function toggleDuelPrivacy(duelId: string, isPublic: boolean) {

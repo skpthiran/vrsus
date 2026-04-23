@@ -12,17 +12,18 @@ export function ResultsPage() {
   
   const result = JSON.parse(sessionStorage.getItem('vrsus_last_result') || 'null');
 
-  useEffect(() => {
-    if (!result) {
-      navigate('/duel');
-    }
-  }, [result, navigate]);
+  if (!result || !result.scores || !result.winner) return (
+    <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <p className="text-neutral-400 mb-4">Duel result not found.</p>
+      <Link to="/history">
+        <Button variant="outline">Back to History</Button>
+      </Link>
+    </div>
+  );
 
-  if (!result) return null;
-
-  const winnerScore = result.scores[result.winner].total;
+  const winnerScore = result.scores[result.winner]?.total || 0;
   const loserLetter = result.winner === 'A' ? 'B' : 'A';
-  const loserScore = result.scores[loserLetter].total;
+  const loserScore = result.scores[loserLetter]?.total || 0;
   const winnerPreview = result.winner === 'A' ? result.previewA : result.previewB;
   const loserPreview = result.winner === 'A' ? result.previewB : result.previewA;
 
@@ -147,9 +148,9 @@ export function ResultsPage() {
           <div className="space-y-6">
              <h3 className="text-sm tracking-widest uppercase font-semibold text-neutral-400 text-center">Detailed Breakdown</h3>
              <div className="grid gap-4">
-                {categoryNames.map((cat, i) => {
-                  const scoreA = result.scores.A[cat];
-                  const scoreB = result.scores.B[cat];
+                {(categoryNames ?? []).map((cat, i) => {
+                  const scoreA = result.scores?.A?.[cat] ?? 0;
+                  const scoreB = result.scores?.B?.[cat] ?? 0;
                   return (
                     <div key={i} className="flex items-center gap-4 bg-surface p-4 rounded-2xl border border-border">
                        <div className="w-12 text-center font-display font-bold text-lg text-neutral-400 flex-shrink-0">{scoreA}</div>
@@ -197,7 +198,7 @@ export function ResultsPage() {
                   Why Photo {result.winner} Wins
                 </h3>
                 <ul className="space-y-3 md:space-y-4">
-                   {result.reasons_for_win.map((item: string, i: number) => (
+                   {(result.reasons_for_win ?? []).map((item: string, i: number) => (
                      <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-winner mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
@@ -213,7 +214,7 @@ export function ResultsPage() {
                   Improvement Tips for Photo {loserLetter}
                 </h3>
                 <ul className="space-y-3 md:space-y-4">
-                   {result.weaknesses_of_loser.map((item: string, i: number) => (
+                   {(result.weaknesses_of_loser ?? []).map((item: string, i: number) => (
                      <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
