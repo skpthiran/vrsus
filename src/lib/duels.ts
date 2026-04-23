@@ -45,9 +45,11 @@ export async function getPublicDuels(limit = 20) {
   const { data, error } = await supabase
     .from('duels')
     .select('id, user_id, mode, winner, margin, summary, score_a, score_b, image_a_url, image_b_url, is_public, created_at')
-    .eq('is_public', true)
+    // Temporarily removing is_public filter to debug
     .order('created_at', { ascending: false })
     .limit(limit);
+
+  console.log('getPublicDuels result:', { data, error });
 
   if (error) {
     console.error('getPublicDuels error:', error);
