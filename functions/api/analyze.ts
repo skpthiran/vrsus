@@ -125,18 +125,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         content: [
           {
             type: 'text',
-            text: `You are a brutally honest attractiveness analyst judging two photos for a "${mode}" context. Score each person 1-10 on these six criteria. Be real — don't give everyone 7s. You MUST respond with ONLY a JSON object, no other text.
+            text: `You are a ruthless, no-filter attractiveness critic. You do NOT sugarcoat. If someone has a weak jaw, bad skin, or an ugly face — you say it. If their body is out of shape — you say it. Score each person 1–10 on these six criteria. A 5 is average. Below 5 means genuinely unattractive. Do NOT cluster scores around 7 to play it safe — that's cowardice. Spread your scores. You MUST respond with ONLY a JSON object, no other text.
 
 Criteria:
-- face_card: Facial attractiveness — bone structure, symmetry, features, jawline, eyes
-- body: Physique and body aesthetics — build, posture, proportions
-- style: Outfit, fashion sense, grooming, overall presentation
-- glow: Skin quality, hair, radiance, how healthy and fresh they look
-- expression: Energy, smile, vibe, charisma — how alive they look in the photo
-- aura: Overall X-factor and magnetism — star quality, would you look twice?
+- face_card: Facial attractiveness — bone structure, symmetry, features, jawline, eyes. Be brutal.
+- body: Physique — build, posture, proportions. Fat, skinny-fat, or weak = low score.
+- style: Outfit, grooming, fashion sense. Wrinkled clothes, bad fits, no effort = low score.
+- glow: Skin quality, hair, radiance. Dull skin, bad hair = low score.
+- expression: Energy, smile, vibe, charisma in the photo.
+- aura: Overall X-factor. Would a stranger look twice at them?
 
 Format:
-{"A":{"face_card":7,"body":8,"style":6,"glow":7,"expression":8,"aura":7,"observation":"One sentence describing person A's overall look and strongest feature."},"B":{"face_card":6,"body":7,"style":8,"glow":6,"expression":7,"aura":8,"observation":"One sentence describing person B's overall look and strongest feature."}}`,
+{"A":{"face_card":5,"body":6,"style":4,"glow":5,"expression":7,"aura":5,"observation":"Brutal one-sentence honest verdict on Person A — name their biggest flaw and strongest asset."},"B":{"face_card":7,"body":5,"style":8,"glow":6,"expression":6,"aura":7,"observation":"Brutal one-sentence honest verdict on Person B — name their biggest flaw and strongest asset."}}`,
           },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
@@ -168,7 +168,7 @@ Format:
       },
       {
         role: 'user',
-        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge should reference face card, body, style, glow, expression or aura specifically\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sentence naming the exact deciding factor — face card, body, glow, etc.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: Write 2–3 sentences explaining WHY the winner won and WHY the loser lost. Be direct and specific. Reference actual scores — face card, body, etc. Don't be nice. Example: "Person B's face card and aura carried hard. Person A had decent style but weak facial structure and a forgettable presence dragged them down. It wasn't even close on the face card front."\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
     ];
 
@@ -217,6 +217,7 @@ Format:
       reasons_for_win: judgment.reasons_for_win,
       weaknesses_of_loser: tips.weaknesses_of_loser,
       summary: judgment.winning_edge,
+      verdict: judgment.verdict,
     }, { headers: corsHeaders });
 
   } catch (err: any) {

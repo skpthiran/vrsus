@@ -13,4 +13,5 @@ export interface DuelRecord {
   };
   reasons_for_win: string[];
   weaknesses_of_loser: string[];
+  verdict?: string;
 }

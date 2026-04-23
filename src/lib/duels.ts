@@ -19,6 +19,7 @@ export async function saveDuelToSupabase(record: DuelRecord, userId: string): Pr
         image_a_url: record.previewA,
         image_b_url: record.previewB,
         is_public: true,
+        verdict: record.verdict,
       })
       .select('id')
       .single();

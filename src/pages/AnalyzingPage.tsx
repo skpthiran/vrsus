@@ -65,6 +65,7 @@ export function AnalyzingPage() {
           scores: result.scores,
           reasons_for_win: result.reasons_for_win,
           weaknesses_of_loser: result.weaknesses_of_loser,
+          verdict: result.verdict,
         };
 
         // Persistent save to local history

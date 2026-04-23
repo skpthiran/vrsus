@@ -34,6 +34,7 @@ export function HistoryPage() {
             scores: d.scores,
             reasons_for_win: d.reasons_for_win,
             weaknesses_of_loser: d.weaknesses_of_loser,
+            verdict: d.verdict,
           })));
         } catch (error) {
           console.error("Failed to load DB history:", error);
@@ -95,6 +96,7 @@ export function HistoryPage() {
       summary: record.summary,
       previewA: record.previewA,
       previewB: record.previewB,
+      verdict: record.verdict,
     }));
     navigate('/duel/results');
   };
@@ -229,8 +231,8 @@ function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete:
            </div>
         </div>
 
-        <p className="text-sm text-neutral-400 line-clamp-1 italic">
-          "{record.summary}"
+        <p className="text-sm text-neutral-400 line-clamp-2 italic">
+          "{record.verdict || record.summary}"
         </p>
 
         <div className="flex items-center justify-center pt-2 text-xs font-bold text-neutral-500 group-hover:text-foreground transition-colors uppercase tracking-widest gap-1">

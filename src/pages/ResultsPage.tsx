@@ -127,17 +127,20 @@ export function ResultsPage() {
        </div>
 
        <div className="max-w-4xl mx-auto space-y-12">
-          {/* Dramatic Summary */}
           <motion.div 
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ delay: 0.4 }}
-             className="bg-surface/50 border border-winner/20 p-8 rounded-3xl text-center relative overflow-hidden"
+             className="bg-surface/50 border border-winner/20 p-8 rounded-3xl relative overflow-hidden"
           >
              <div className="absolute inset-0 bg-winner/5 blur-3xl rounded-full"></div>
-             <p className="text-xl md:text-2xl font-display font-semibold leading-relaxed relative z-10">
-               "{result.summary}"
-             </p>
+             <div className="relative z-10 space-y-3">
+               <p className="text-xs uppercase tracking-widest font-semibold text-winner text-center mb-4">🏆 The Verdict</p>
+               <p className="text-base md:text-lg font-display leading-relaxed text-neutral-200">
+                 {result.verdict || result.summary}
+               </p>
+               <p className="text-xs text-neutral-500 italic text-right">— VRSUS AI Judge</p>
+             </div>
           </motion.div>
 
           {/* Score Breakdown */}
