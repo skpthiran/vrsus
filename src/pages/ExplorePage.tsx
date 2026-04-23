@@ -99,9 +99,12 @@ export function ExplorePage() {
       {/* Main Feed / Leaderboard */}
       <div className="space-y-8">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-neutral-500 gap-4">
-            <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-            <p className="font-bold animate-pulse">Scanning the multiverse...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="aspect-[4/3] rounded-[2rem] bg-surface border border-border animate-pulse flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full border-4 border-white/5 border-t-white/20 animate-spin" />
+              </div>
+            ))}
           </div>
         ) : activeCategory === 'leaderboard' ? (
           <div className="bg-surface border border-border rounded-[2rem] overflow-hidden">

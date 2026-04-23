@@ -44,12 +44,10 @@ export async function getPublicDuels(limit = 20) {
   // We fetch without requiring auth context for the query to work for guests
   const { data, error } = await supabase
     .from('duels')
-    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, image_a_url, image_b_url, is_public, created_at')
-    // Temporarily removing is_public filter to debug
+    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, created_at, is_public')
+    .eq('is_public', true)
     .order('created_at', { ascending: false })
     .limit(limit);
-
-  console.log('getPublicDuels result:', { data, error });
 
   if (error) {
     console.error('getPublicDuels error:', error);

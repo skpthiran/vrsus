@@ -88,37 +88,65 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
       >
         {/* Photo A */}
         <div className="relative overflow-hidden">
-          <img src={duel.imgA} alt="A" className={cn("w-full h-full object-cover transition-all", duel.winner === 'B' ? "opacity-50 grayscale-[40%]" : "")} />
+          {duel.imgA ? (
+            <img src={duel.imgA} alt="A" className={cn("w-full h-full object-cover transition-all", duel.winner === 'B' ? "opacity-50 grayscale-[40%]" : "")} />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 flex items-center justify-center">
+              <span className="font-display font-black text-4xl text-white/20">A</span>
+            </div>
+          )}
           <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
             <span className="text-xs font-black text-white">A</span>
           </div>
           {duel.winner === 'A' && (
             <>
               <div className="absolute inset-0 ring-4 ring-inset" style={{ '--tw-ring-color': '#fbbf24' } as any} />
-              <div className="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-black px-2 py-0.5 rounded-full">👑 WIN</div>
-              <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-yellow-400 font-black text-lg px-2 py-0.5 rounded-lg">{duel.aScore}</div>
+              <div className="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-black px-2 py-0.5 rounded-full z-10">👑 WIN</div>
+              <div className="absolute bottom-2 left-2 z-10">
+                <span className="bg-black/80 backdrop-blur-sm text-yellow-400 font-display font-black text-xl px-3 py-1.5 rounded-xl border border-yellow-400/40 shadow-[0_0_12px_rgba(251,191,36,0.4)]">
+                  {duel.aScore}
+                </span>
+              </div>
             </>
           )}
           {duel.winner === 'B' && (
-            <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white/60 font-bold text-lg px-2 py-0.5 rounded-lg">{duel.aScore}</div>
+            <div className="absolute bottom-2 left-2 z-10">
+              <span className="bg-black/80 backdrop-blur-sm text-white font-display font-black text-xl px-3 py-1.5 rounded-xl border border-white/20">
+                {duel.aScore}
+              </span>
+            </div>
           )}
         </div>
 
         {/* Photo B */}
         <div className="relative overflow-hidden">
-          <img src={duel.imgB} alt="B" className={cn("w-full h-full object-cover transition-all", duel.winner === 'A' ? "opacity-50 grayscale-[40%]" : "")} />
+          {duel.imgB ? (
+            <img src={duel.imgB} alt="B" className={cn("w-full h-full object-cover transition-all", duel.winner === 'A' ? "opacity-50 grayscale-[40%]" : "")} />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 flex items-center justify-center">
+              <span className="font-display font-black text-4xl text-white/20">B</span>
+            </div>
+          )}
           <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
             <span className="text-xs font-black text-white">B</span>
           </div>
           {duel.winner === 'B' && (
             <>
               <div className="absolute inset-0 ring-4 ring-inset" style={{ '--tw-ring-color': '#fbbf24' } as any} />
-              <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-black px-2 py-0.5 rounded-full">👑 WIN</div>
-              <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-yellow-400 font-black text-lg px-2 py-0.5 rounded-lg">{duel.bScore}</div>
+              <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-black px-2 py-0.5 rounded-full z-10">👑 WIN</div>
+              <div className="absolute bottom-2 right-2 z-10">
+                <span className="bg-black/80 backdrop-blur-sm text-yellow-400 font-display font-black text-xl px-3 py-1.5 rounded-xl border border-yellow-400/40 shadow-[0_0_12px_rgba(251,191,36,0.4)]">
+                  {duel.bScore}
+                </span>
+              </div>
             </>
           )}
           {duel.winner === 'A' && (
-            <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white/60 font-bold text-lg px-2 py-0.5 rounded-lg">{duel.bScore}</div>
+            <div className="absolute bottom-2 right-2 z-10">
+              <span className="bg-black/80 backdrop-blur-sm text-white font-display font-black text-xl px-3 py-1.5 rounded-xl border border-white/20">
+                {duel.bScore}
+              </span>
+            </div>
           )}
         </div>
 
