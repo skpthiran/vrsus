@@ -1,87 +1,242 @@
-import React from 'react';
-import { Shield, Bell, Lock, User, Trash2 } from 'lucide-react';
-import { Button } from '../components/ui/button';
+import React, { useEffect, useState } from 'react';
+import { Shield, User, Trash2, Loader2, Check } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
+
+interface UserSettings {
+  public_duels: boolean;
+  auto_delete_photos: boolean;
+}
+
+const DEFAULT_SETTINGS: UserSettings = {
+  public_duels: true,
+  auto_delete_photos: false,
+};
 
 export function SettingsPage() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('account');
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+  const [displayName, setDisplayName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!user) { navigate('/auth'); return; }
+    supabase
+      .from('profiles')
+      .select('display_name, settings')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setDisplayName(data.display_name || '');
+          setSettings({ ...DEFAULT_SETTINGS, ...(data.settings || {}) });
+        }
+        setLoading(false);
+      });
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    await supabase
+      .from('profiles')
+      .update({ display_name: displayName, settings })
+      .eq('id', user.id);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleToggle = (key: keyof UserSettings) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    // Delete all duels first, then sign out (full account deletion requires admin API)
+    await supabase.from('duels').delete().eq('user_id', user.id);
+    await supabase.from('comments').delete().eq('user_id', user.id);
+    await supabase.from('reactions').delete().eq('user_id', user.id);
+    await signOut();
+    navigate('/');
+  };
+
+  const TABS = [
+    { id: 'account', label: 'Account', icon: <User size={16} /> },
+    { id: 'privacy', label: 'Privacy & Safety', icon: <Shield size={16} /> },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 container mx-auto px-4 max-w-4xl py-12 flex flex-col md:flex-row gap-12">
-      
-      <div className="w-full md:w-64 shrink-0 space-y-2">
-         <h2 className="text-xs uppercase tracking-widest text-neutral-500 font-bold mb-4 px-3">Settings</h2>
-         {[
-           { icon: <User size={18} />, label: 'Account' },
-           { icon: <Shield size={18} />, label: 'Privacy & Safety' },
-           { icon: <Bell size={18} />, label: 'Notifications' },
-           { icon: <Lock size={18} />, label: 'Security' },
-         ].map((item, i) => (
-           <button key={i} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${i === 1 ? 'bg-surface text-foreground' : 'text-neutral-400 hover:text-foreground hover:bg-surface/50'}`}>
-              {item.icon}
-              {item.label}
-           </button>
-         ))}
+    <div className="flex-1 container mx-auto px-4 max-w-4xl py-8 md:py-12 flex flex-col md:flex-row gap-8">
+
+      {/* Sidebar */}
+      <div className="w-full md:w-56 shrink-0 flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+        <h2 className="hidden md:block text-xs uppercase tracking-widest text-neutral-500 font-bold mb-2 px-3">Settings</h2>
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
+              activeTab === tab.id
+                ? 'bg-surface text-foreground'
+                : 'text-neutral-400 hover:text-foreground hover:bg-surface/50'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="flex-1 space-y-12">
-         <div>
-            <h1 className="text-3xl font-display font-bold mb-2">Privacy & Safety</h1>
-            <p className="text-neutral-400 pb-6 border-b border-border">Manage how your photos and data are used on VRSUS.</p>
-         </div>
+      {/* Content */}
+      <div className="flex-1 min-w-0">
 
-         <div className="space-y-8">
-            <ToggleOption 
-               title="Allow duels to appear in Explore" 
-               desc="If checked, your shared duels may be featured on the public Explore page." 
-               defaultChecked={true}
-            />
-            <ToggleOption 
-               title="Auto-delete uploaded photos after analysis" 
-               desc="We delete photos after 30 days by default. Toggle this to delete immediately after the results are viewed." 
-               defaultChecked={false}
-            />
-            <ToggleOption 
-               title="Anonymize faces in public duels" 
-               desc="Automatically detect and blur faces if a duel is shared publicly." 
-               defaultChecked={false}
-            />
-         </div>
-
-         <div className="pt-8 border-t border-border">
-            <h3 className="text-xl font-display font-bold mb-4">Safety Guidelines</h3>
-            <div className="bg-surface p-6 rounded-2xl border border-border space-y-4 text-sm text-neutral-300">
-               <p>• Only upload photos of consenting adults (18+).</p>
-               <p>• Do not use VRSUS to humiliate, harass, or bully others.</p>
-               <p>• We actively monitor reports and will ban users violating these terms.</p>
-               <Button variant="outline" className="mt-4">Read Full Policy</Button>
+        {/* Account Tab */}
+        {activeTab === 'account' && (
+          <div className="space-y-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-display font-bold mb-1">Account</h1>
+              <p className="text-neutral-400 text-sm">{user?.email}</p>
             </div>
-         </div>
 
-         <div className="pt-12">
-            <button className="flex items-center gap-2 text-red-500 hover:text-red-400 font-medium transition-colors">
-               <Trash2 size={18} />
-               Delete Account & All Data
+            <div className="bg-surface border border-border rounded-2xl p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Display Name</label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder="How you appear to others"
+                  maxLength={32}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent placeholder:text-neutral-500"
+                />
+                <p className="text-xs text-neutral-500 mt-1.5">Shown on comments and your public profile.</p>
+              </div>
+
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+              >
+                {saving && <Loader2 size={14} className="animate-spin" />}
+                {saved && <Check size={14} />}
+                {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+
+            <div className="bg-surface border border-border rounded-2xl p-6">
+              <h3 className="font-semibold mb-1 text-red-400">Danger Zone</h3>
+              <p className="text-sm text-neutral-400 mb-4">Deletes all your duels, comments, and reactions. This cannot be undone.</p>
+              {!deleteConfirm ? (
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 font-medium transition-colors"
+                >
+                  <Trash2 size={15} />
+                  Delete Account & All Data
+                </button>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-neutral-300">Are you sure?</span>
+                  <button
+                    onClick={handleDeleteAccount}
+                    className="px-4 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-400"
+                  >
+                    Yes, delete everything
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(false)}
+                    className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Privacy Tab */}
+        {activeTab === 'privacy' && (
+          <div className="space-y-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-display font-bold mb-1">Privacy & Safety</h1>
+              <p className="text-neutral-400 text-sm">Manage how your photos and data are used on VRSUS.</p>
+            </div>
+
+            <div className="bg-surface border border-border rounded-2xl p-6 space-y-6">
+              <ToggleRow
+                title="Allow duels to appear in Explore"
+                desc="Your completed duels will be visible to other users on the Explore feed."
+                checked={settings.public_duels}
+                onChange={() => handleToggle('public_duels')}
+              />
+              <div className="border-t border-border" />
+              <ToggleRow
+                title="Auto-delete uploaded photos after analysis"
+                desc="Photos are removed from storage immediately after results are generated."
+                checked={settings.auto_delete_photos}
+                onChange={() => handleToggle('auto_delete_photos')}
+              />
+            </div>
+
+            <div className="bg-surface border border-border rounded-2xl p-6 space-y-3">
+              <h3 className="font-semibold">Safety Guidelines</h3>
+              <ul className="text-sm text-neutral-400 space-y-2">
+                <li>• Only upload photos of consenting adults (18+).</li>
+                <li>• Do not use VRSUS to humiliate, harass, or bully others.</li>
+                <li>• We actively monitor reports and will ban users violating these terms.</li>
+              </ul>
+            </div>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+            >
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {saved && <Check size={14} />}
+              {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Settings'}
             </button>
-         </div>
+          </div>
+        )}
       </div>
-
     </div>
   );
 }
 
-function ToggleOption({ title, desc, defaultChecked }: { title: string, desc: string, defaultChecked?: boolean }) {
-  const [checked, setChecked] = React.useState(defaultChecked);
+function ToggleRow({ title, desc, checked, onChange }: {
+  title: string;
+  desc: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <div>
-         <div className="font-semibold text-foreground mb-1">{title}</div>
-         <div className="text-sm text-neutral-400 max-w-md">{desc}</div>
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm text-foreground mb-0.5">{title}</div>
+        <div className="text-xs text-neutral-400">{desc}</div>
       </div>
-      <button 
-        onClick={() => setChecked(!checked)}
-        className={`relative w-12 h-6 rounded-full transition-colors ${checked ? 'bg-accent' : 'bg-surface border border-border'}`}
+      <button
+        onClick={onChange}
+        className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 mt-0.5 ${checked ? 'bg-accent' : 'bg-neutral-700'}`}
       >
-        <div className={`absolute top-1 bottom-1 w-4 h-4 rounded-full transition-all ${checked ? 'bg-white right-1' : 'bg-neutral-500 left-1'}`}></div>
+        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${checked ? 'right-1' : 'left-1'}`} />
       </button>
     </div>
-  )
+  );
 }
-

@@ -6,7 +6,8 @@ import { getHistory, deleteFromHistory, clearHistory } from '../lib/history';
 import { DuelRecord } from '../types/history';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserDuels } from '../lib/duels';
+import { getUserDuels, deleteDuel } from '../lib/duels';
+import { supabase } from '../lib/supabase';
 
 export function HistoryPage() {
   const navigate = useNavigate();
@@ -46,17 +47,42 @@ export function HistoryPage() {
     load();
   }, [user]);
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    if (!window.confirm('Delete this duel?')) return;
+
+    // Optimistically remove from UI
+    setHistory(prev => prev.filter(r => r.id !== id));
+
+    if (user) {
+      try {
+        await deleteDuel(id);
+      } catch (err) {
+        console.error('Failed to delete from DB:', err);
+      }
+    }
+    
+    // Also remove from local storage if it was there
     deleteFromHistory(id);
-    setHistory(getHistory());
   };
 
-  const handleClear = () => {
-    if (window.confirm('Are you sure you want to clear all history?')) {
-      clearHistory();
-      setHistory([]);
+  const handleClear = async () => {
+    if (!window.confirm('Are you sure you want to clear all history?')) return;
+
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('duels')
+          .delete()
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } catch (err) {
+        console.error('Failed to clear DB history:', err);
+      }
     }
+
+    clearHistory();
+    setHistory([]);
   };
 
   const handleViewResult = (record: DuelRecord) => {
