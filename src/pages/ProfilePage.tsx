@@ -94,6 +94,8 @@ export function ProfilePage() {
     navigate('/duel/results');
   };
 
+  return (
+    <div className="flex-1 flex flex-col">
       {/* Profile Header Skeleton */}
       {loading && (
         <div className="flex-1 container mx-auto px-4 max-w-4xl py-8 space-y-8 animate-pulse">
@@ -129,154 +131,157 @@ export function ProfilePage() {
 
       {!loading && user && (
         <div className="flex-1 container mx-auto px-4 max-w-4xl py-8 space-y-8">
-
-      {/* Profile Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center">
-            <span className="text-2xl font-black text-accent">
-              {displayName[0]?.toUpperCase() || '?'}
-            </span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-display font-bold">{displayName}</h1>
-            <p className="text-sm text-neutral-500">{user.email}</p>
-          </div>
-        </div>
-        <Link to="/settings">
-          <button className="flex items-center gap-2 text-sm text-neutral-400 hover:text-foreground transition-colors bg-surface border border-border px-3 py-2 rounded-xl">
-            <Settings size={15} />
-            <span className="hidden sm:inline">Edit Profile</span>
-          </button>
-        </Link>
-      </div>
-
-      {/* Streak Banner */}
-      {streak.current > 0 && (
-        <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/30 rounded-2xl px-5 py-4">
-          <span className="text-3xl">🔥</span>
-          <div>
-            <div className="font-bold text-orange-400 text-lg">
-              {streak.current} duel streak!
+          {/* Profile Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center">
+                <span className="text-2xl font-black text-accent">
+                  {displayName[0]?.toUpperCase() || '?'}
+                </span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-display font-bold">{displayName}</h1>
+                <p className="text-sm text-neutral-500">{user.email}</p>
+              </div>
             </div>
-            <div className="text-xs text-neutral-400">
-              Keep uploading high-quality photos to extend it. Best ever: {streak.best}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {streak.current === 0 && streak.best > 0 && (
-        <div className="flex items-center gap-3 bg-surface border border-border rounded-2xl px-5 py-4">
-          <span className="text-2xl">💀</span>
-          <div>
-            <div className="font-semibold text-neutral-300">Streak broken</div>
-            <div className="text-xs text-neutral-500">Your best streak was {streak.best}. Upload a high-scoring photo to start again.</div>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Duels', value: stats.total, icon: <Zap size={18} />, color: 'text-accent' },
-          { label: 'Avg Score', value: stats.avgScore || '—', icon: <Star size={18} />, color: 'text-yellow-400' },
-          { label: 'Best Score', value: stats.bestScore || '—', icon: <Trophy size={18} />, color: 'text-green-400' },
-          { label: 'Best Streak', value: streak.best > 0 ? `${streak.best} 🔥` : '—', icon: <Zap size={18} />, color: 'text-orange-400' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-surface border border-border rounded-2xl p-4">
-            <div className={cn('mb-2', stat.color)}>{stat.icon}</div>
-            <div className="text-xl font-display font-bold capitalize">{stat.value}</div>
-            <div className="text-xs text-neutral-500 mt-0.5">{stat.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Duels */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-display font-bold">Recent Duels</h2>
-          {history.length > 3 && (
-            <Link to="/history" className="flex items-center gap-1 text-sm text-neutral-400 hover:text-foreground transition-colors">
-              See all <ArrowRight size={14} />
+            <Link to="/settings">
+              <button className="flex items-center gap-2 text-sm text-neutral-400 hover:text-foreground transition-colors bg-surface border border-border px-3 py-2 rounded-xl">
+                <Settings size={15} />
+                <span className="hidden sm:inline">Edit Profile</span>
+              </button>
             </Link>
+          </div>
+
+          {/* Streak Banner */}
+          {streak.current > 0 && (
+            <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/30 rounded-2xl px-5 py-4">
+              <span className="text-3xl">🔥</span>
+              <div>
+                <div className="font-bold text-orange-400 text-lg">
+                  {streak.current} duel streak!
+                </div>
+                <div className="text-xs text-neutral-400">
+                  Keep uploading high-quality photos to extend it. Best ever: {streak.best}
+                </div>
+              </div>
+            </div>
           )}
-        </div>
 
-        {history.length === 0 ? (
-          <div className="bg-surface border border-border rounded-2xl p-12 text-center">
-            <Ghost size={36} className="text-neutral-600 mx-auto mb-3" />
-            <p className="text-neutral-400 font-medium">No duels yet</p>
-            <p className="text-neutral-500 text-sm mb-4">Run your first duel to see stats here</p>
-            <Link to="/duel">
-              <button className="px-4 py-2 bg-foreground text-background rounded-full text-sm font-semibold">
-                Start a Duel
-              </button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {history.slice(0, 5).map(record => (
-              <button
-                key={record.id}
-                onClick={() => handleViewDuel(record)}
-                className="w-full bg-surface border border-border rounded-2xl p-4 flex items-center gap-4 hover:border-accent/30 transition-colors text-left"
-              >
-                {/* Thumbnails */}
-                <div className="flex -space-x-3 flex-shrink-0">
-                  {[record.previewA, record.previewB].map((img, i) => (
-                    <div key={i} className={cn(
-                      "w-12 h-12 rounded-xl overflow-hidden border-2 border-background bg-neutral-900",
-                      i === 1 && "relative"
-                    )}>
-                      {img ? (
-                        <img 
-                          src={img} 
-                          alt="" 
-                          className="w-full h-full object-cover" 
-                          loading="lazy" 
-                          decoding="async" 
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-neutral-800" />
-                      )}
-                    </div>
-                  ))}
-                </div>
+          {streak.current === 0 && streak.best > 0 && (
+            <div className="flex items-center gap-3 bg-surface border border-border rounded-2xl px-5 py-4">
+              <span className="text-2xl">💀</span>
+              <div>
+                <div className="font-semibold text-neutral-300">Streak broken</div>
+                <div className="text-xs text-neutral-500">Your best streak was {streak.best}. Upload a high-scoring photo to start again.</div>
+              </div>
+            </div>
+          )}
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-xs font-bold text-yellow-400">👑 Photo {record.winner} wins</span>
-                    <span className="text-xs text-neutral-500 capitalize">{record.mode}</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 truncate">{record.summary || 'No summary'}</p>
-                </div>
-
-                {/* Score */}
-                <div className="flex-shrink-0 text-right">
-                  <div className="text-lg font-display font-bold text-accent">
-                    {record.winner === 'A' ? record.scores?.A?.total : record.scores?.B?.total}
-                  </div>
-                  <div className="text-xs text-neutral-500">score</div>
-                </div>
-
-                <ArrowRight size={16} className="text-neutral-600 flex-shrink-0" />
-              </button>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Total Duels', value: stats.total, icon: <Zap size={18} />, color: 'text-accent' },
+              { label: 'Avg Score', value: stats.avgScore || '—', icon: <Star size={18} />, color: 'text-yellow-400' },
+              { label: 'Best Score', value: stats.bestScore || '—', icon: <Trophy size={18} />, color: 'text-green-400' },
+              { label: 'Best Streak', value: streak.best > 0 ? `${streak.best} 🔥` : '—', icon: <Zap size={18} />, color: 'text-orange-400' },
+            ].map((stat, i) => (
+              <div key={i} className="bg-surface border border-border rounded-2xl p-4">
+                <div className={cn('mb-2', stat.color)}>{stat.icon}</div>
+                <div className="text-xl font-display font-bold capitalize">{stat.value}</div>
+                <div className="text-xs text-neutral-500 mt-0.5">{stat.label}</div>
+              </div>
             ))}
           </div>
-        )}
-      </div>
 
-      {/* Sign Out */}
-      <div className="pt-4 border-t border-border">
-        <button
-          onClick={signOut}
-          className="text-sm text-neutral-500 hover:text-red-400 transition-colors"
-        >
-          Sign out
-        </button>
-      </div>
+          {/* Recent Duels */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-display font-bold">Recent Duels</h2>
+              {history.length > 3 && (
+                <Link to="/history" className="flex items-center gap-1 text-sm text-neutral-400 hover:text-foreground transition-colors">
+                  See all <ArrowRight size={14} />
+                </Link>
+              )}
+            </div>
+
+            {history.length === 0 ? (
+              <div className="bg-surface border border-border rounded-2xl p-12 text-center">
+                <Ghost size={36} className="text-neutral-600 mx-auto mb-3" />
+                <p className="text-neutral-400 font-medium">No duels yet</p>
+                <p className="text-neutral-500 text-sm mb-4">Run your first duel to see stats here</p>
+                <Link to="/duel">
+                  <button className="px-4 py-2 bg-foreground text-background rounded-full text-sm font-semibold">
+                    Start a Duel
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {history.slice(0, 5).map(record => (
+                  <button
+                    key={record.id}
+                    onClick={() => handleViewDuel(record)}
+                    className="w-full bg-surface border border-border rounded-2xl p-4 flex items-center gap-4 hover:border-accent/30 transition-colors text-left"
+                  >
+                    {/* Thumbnails */}
+                    <div className="flex -space-x-3 flex-shrink-0">
+                      {[record.previewA, record.previewB].map((img, i) => (
+                        <div key={i} className={cn(
+                          "w-12 h-12 rounded-xl overflow-hidden border-2 border-background bg-neutral-900",
+                          i === 1 && "relative"
+                        )}>
+                          {img ? (
+                            <img 
+                              src={img} 
+                              alt="" 
+                              className="w-full h-full object-cover" 
+                              loading="lazy" 
+                              decoding="async" 
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-neutral-800" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-bold text-yellow-400">👑 Photo {record.winner} wins</span>
+                        <span className="text-xs text-neutral-500 capitalize">{record.mode}</span>
+                      </div>
+                      <p className="text-xs text-neutral-400 truncate">{record.summary || 'No summary'}</p>
+                    </div>
+
+                    {/* Score */}
+                    <div className="flex-shrink-0 text-right">
+                      <div className="text-lg font-display font-bold text-accent">
+                        {record.winner === 'A' ? record.scores?.A?.total : record.scores?.B?.total}
+                      </div>
+                      <div className="text-xs text-neutral-500">score</div>
+                    </div>
+
+                    <ArrowRight size={16} className="text-neutral-600 flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Sign Out */}
+          <div className="pt-4 border-t border-border">
+            <button
+              onClick={signOut}
+              className="text-sm text-neutral-500 hover:text-red-400 transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default ProfilePage;
