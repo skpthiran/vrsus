@@ -8,12 +8,15 @@ import { HistoryPage } from './pages/HistoryPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AuthPage } from './pages/AuthPage';
 
 export default function App() {
   return (
     <MainLayout>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+
         <Route path="/duel" element={<CreateDuelPage />} />
         <Route path="/duel/analyzing" element={<AnalyzingPage />} />
         <Route path="/duel/results" element={<ResultsPage />} />

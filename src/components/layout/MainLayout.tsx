@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Hexagon } from 'lucide-react'; // Example abstract logo
+import { Hexagon, LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const isLanding = location.pathname === '/';
 
   return (
@@ -26,17 +28,29 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </nav>
           
           <div className="flex items-center gap-4">
-            {isLanding ? (
+            {user ? (
+              <div className="flex items-center gap-4">
+                <Link to="/profile" className="flex items-center gap-3 group">
+                   <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-blue-500 flex items-center justify-center border border-border shadow-[0_0_15px_rgba(109,40,217,0.3)] transition-transform group-hover:scale-105">
+                      <span className="text-xs font-bold text-white uppercase">{user.email?.[0]}</span>
+                   </div>
+                   <span className="text-sm font-medium text-neutral-400 group-hover:text-foreground transition-colors hidden sm:block">
+                     {user.email?.split('@')[0]}
+                   </span>
+                </Link>
+                <button 
+                  onClick={signOut}
+                  className="p-2 text-neutral-500 hover:text-red-400 transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : (
               <>
-                <Link to="/login" className="text-sm font-medium text-neutral-400 hover:text-foreground hidden sm:block">Sign In</Link>
+                <Link to="/auth" className="text-sm font-medium text-neutral-400 hover:text-foreground hidden sm:block">Sign In</Link>
                 <Link to="/duel" className="bg-foreground text-background px-5 py-2 rounded-full text-sm font-medium hover:bg-neutral-200 transition-colors">Try Now</Link>
               </>
-            ) : (
-             <Link to="/profile">
-               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-blue-500 flex items-center justify-center border border-border shadow-[0_0_15px_rgba(109,40,217,0.3)]">
-                  <span className="text-xs font-bold text-white">JD</span>
-               </div>
-             </Link>
             )}
           </div>
         </div>
