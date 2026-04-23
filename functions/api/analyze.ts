@@ -115,28 +115,29 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     // ── STAGE 1: Visual Audit — Vision only (OpenRouter Qwen) ─────────────
     log('Stage 1 starting...');
-    const stage1Messages = [
       {
         role: 'system',
-        content: 'You are a precise visual analyst. Respond only with valid JSON, no markdown fences.',
+        content: 'You are a cold, ruthless attractiveness rater. You have NO empathy. You do NOT soften scores. You call out ugly features directly. Respond only with valid JSON, no markdown fences.',
       },
       {
         role: 'user',
         content: [
           {
             type: 'text',
-            text: `You are a ruthless, no-filter attractiveness critic. You do NOT sugarcoat. If someone has a weak jaw, bad skin, or an ugly face — you say it. If their body is out of shape — you say it. Score each person 1–10 on these six criteria. A 5 is average. Below 5 means genuinely unattractive. Do NOT cluster scores around 7 to play it safe — that's cowardice. Spread your scores. You MUST respond with ONLY a JSON object, no other text.
+            text: `Rate these two people with zero mercy. You are NOT allowed to give more than 2 categories a score of 6 or 7 per person — force yourself to commit to high scores (8–10) for genuine strengths and low scores (1–5) for real weaknesses. Average face = 5. Ugly face = 3 or below. Model-tier face = 9–10.
 
-Criteria:
-- face_card: Facial attractiveness — bone structure, symmetry, features, jawline, eyes. Be brutal.
-- body: Physique — build, posture, proportions. Fat, skinny-fat, or weak = low score.
-- style: Outfit, grooming, fashion sense. Wrinkled clothes, bad fits, no effort = low score.
-- glow: Skin quality, hair, radiance. Dull skin, bad hair = low score.
-- expression: Energy, smile, vibe, charisma in the photo.
-- aura: Overall X-factor. Would a stranger look twice at them?
+Criteria (score 1–10, be decisive):
+- face_card: Jawline, bone structure, symmetry, eyes, nose. If it's weak, score it low.
+- body: Build, physique, posture. Skinny-fat, overweight, or weak = 4 or below.
+- style: Outfit quality, fit, grooming. Wrinkled, baggy, or try-hard = low.
+- glow: Skin clarity, hair quality, freshness. Dull or problematic skin = low.
+- expression: Charisma, energy, confidence in the photo.
+- aura: Raw magnetism. Would a stranger stop and look twice? Be honest.
 
-Format:
-{"A":{"face_card":5,"body":6,"style":4,"glow":5,"expression":7,"aura":5,"observation":"Brutal one-sentence honest verdict on Person A — name their biggest flaw and strongest asset."},"B":{"face_card":7,"body":5,"style":8,"glow":6,"expression":6,"aura":7,"observation":"Brutal one-sentence honest verdict on Person B — name their biggest flaw and strongest asset."}}`,
+observation: One sentence, name EXACTLY what's holding them back AND their one real asset. Be direct — "weak jawline but strong eyes" not "they have an interesting look".
+
+Respond ONLY with this JSON:
+{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."}}`,
           },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
@@ -164,11 +165,11 @@ Format:
     const stage2Messages = [
       {
         role: 'system',
-        content: 'You are VRSUS Judge. You receive visual scores and pick a winner. Respond only with valid JSON, no markdown fences.',
+        content: 'You are a brutal judge. No diplomatic language. Winners win because they are objectively better. Losers lose because they are objectively worse. Respond only with valid JSON.',
       },
       {
         role: 'user',
-        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: Write 2–3 sentences explaining WHY the winner won and WHY the loser lost. Be direct and specific. Reference actual scores — face card, body, etc. Don't be nice. Example: "Person B's face card and aura carried hard. Person A had decent style but weak facial structure and a forgettable presence dragged them down. It wasn't even close on the face card front."\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: 2-3 sentences. State BLUNTLY why the winner is better and what specifically is wrong with the loser. Use words like "significantly weaker", "drags the score down", "no competition". Do NOT say "despite" or use diplomatic softeners. Example: "Person A's face card is in a different league. Person B has a forgettable face and the body score sealed the loss. There was no category where B had a clear enough edge to matter."\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
     ];
 
@@ -191,11 +192,11 @@ Format:
     const stage3Messages = [
       {
         role: 'system',
-        content: 'You are a confident, direct beauty and style coach. Give real, actionable advice. Respond only with valid JSON, no markdown fences.',
+        content: 'You are a harsh but honest personal trainer and stylist. You identify real problems and give real fixes. No sugarcoating. Respond only with valid JSON, no markdown fences.',
       },
       {
         role: 'user',
-        content: `The losing photo (Photo ${loser}) had these scores: ${JSON.stringify(loserScores)}\nObservation: "${loserScores.observation}"\nMode: "${mode}"\n\nGive 3 specific, actionable tips to improve their attractiveness score — could be about face card angles, body posture, style choices, skin/hair glow, expression energy, or overall aura. Be direct and helpful. Return ONLY this JSON:\n{"weaknesses_of_loser":["tip 1","tip 2","tip 3"]}`,
+        content: `Photo ${loser} lost. Their scores: ${JSON.stringify(loserScores)}\nObservation: "${loserScores.observation}"\n\nGive 3 brutally honest improvement tips. Call out the actual problem first, then give the fix. Don't be gentle. If their face card is low, tell them what specifically to work on (angles, lighting, facial hair, skincare). If body is low, say it and give a fix. Return ONLY:\n{"weaknesses_of_loser":["Problem: X. Fix: Y.","Problem: X. Fix: Y.","Problem: X. Fix: Y."]}`,
       },
     ];
 

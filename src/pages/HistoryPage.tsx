@@ -153,8 +153,9 @@ export function HistoryPage() {
 }
 
 function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete: (e: React.MouseEvent, id: string) => void, onClick: () => void }) {
-  const winnerScore = record.scores[record.winner].total;
-  const loserLetter = record.winner === 'A' ? 'B' : 'A';
+  const winnerLetter = record.winner;
+  const loserLetter = winnerLetter === 'A' ? 'B' : 'A';
+  const winnerScore = record.scores[winnerLetter].total;
   const loserScore = record.scores[loserLetter].total;
   
   const formattedDate = new Date(record.createdAt).toLocaleDateString('en-US', { 
