@@ -86,23 +86,16 @@ export function HistoryPage() {
   };
 
   const handleViewResult = (record: DuelRecord) => {
-    // Populate sessionStorage to match ResultsPage expectations
-    const result = {
+    sessionStorage.setItem('vrsus_last_result', JSON.stringify({
       winner: record.winner,
       margin: record.margin,
       scores: record.scores,
       reasons_for_win: record.reasons_for_win,
       weaknesses_of_loser: record.weaknesses_of_loser,
-      summary: record.summary
-    };
-    
-    const previews = {
+      summary: record.summary,
       previewA: record.previewA,
-      previewB: record.previewB
-    };
-
-    sessionStorage.setItem('vrsus_result', JSON.stringify(result));
-    sessionStorage.setItem('vrsus_previews', JSON.stringify(previews));
+      previewB: record.previewB,
+    }));
     navigate('/duel/results');
   };
 

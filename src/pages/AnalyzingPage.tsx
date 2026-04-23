@@ -84,8 +84,9 @@ export function AnalyzingPage() {
 
         // Store result for Results page
         sessionStorage.setItem('vrsus_last_result', JSON.stringify({
-           ...record,
-           id: dbId // Use Supabase ID if available
+          ...result,
+          previewA: dataUrlA,
+          previewB: dataUrlB,
         }));
 
         // Give the animation a tiny bit more time if it was too fast
