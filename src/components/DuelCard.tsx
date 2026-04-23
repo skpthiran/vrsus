@@ -88,13 +88,21 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
       >
         {/* Photo A */}
         <div className="relative overflow-hidden">
-          {duel.imgA ? (
-            <img src={duel.imgA} alt="A" className={cn("w-full h-full object-cover transition-all", duel.winner === 'B' ? "opacity-50 grayscale-[40%]" : "")} />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 flex items-center justify-center">
-              <span className="font-display font-black text-4xl text-white/20">A</span>
-            </div>
-          )}
+          <div className="w-full h-full bg-neutral-900 overflow-hidden">
+            {duel.imgA ? (
+              <img 
+                src={duel.imgA} 
+                alt="A" 
+                className={cn("w-full h-full object-cover transition-all", duel.winner === 'B' ? "opacity-50 grayscale-[40%]" : "")} 
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="font-display font-black text-4xl text-white/20">A</span>
+              </div>
+            )}
+          </div>
           <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
             <span className="text-xs font-black text-white">A</span>
           </div>
@@ -120,13 +128,21 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
 
         {/* Photo B */}
         <div className="relative overflow-hidden">
-          {duel.imgB ? (
-            <img src={duel.imgB} alt="B" className={cn("w-full h-full object-cover transition-all", duel.winner === 'A' ? "opacity-50 grayscale-[40%]" : "")} />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 flex items-center justify-center">
-              <span className="font-display font-black text-4xl text-white/20">B</span>
-            </div>
-          )}
+          <div className="w-full h-full bg-neutral-900 overflow-hidden">
+            {duel.imgB ? (
+              <img 
+                src={duel.imgB} 
+                alt="B" 
+                className={cn("w-full h-full object-cover transition-all", duel.winner === 'A' ? "opacity-50 grayscale-[40%]" : "")} 
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="font-display font-black text-4xl text-white/20">B</span>
+              </div>
+            )}
+          </div>
           <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
             <span className="text-xs font-black text-white">B</span>
           </div>
