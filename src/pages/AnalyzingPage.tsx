@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { analyzePhotos } from '../lib/api';
+import { saveDuelToSupabase } from '../lib/duels';
+import { saveToHistory } from '../lib/history';
+import { useAuth } from '../contexts/AuthContext';
+import { DuelRecord } from '../types/history';
 
 export function AnalyzingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [stepIndex, setStepIndex] = useState(0);
   const [previews, setPreviews] = useState<{ previewA: string | null; previewB: string | null }>({
     previewA: null,
@@ -19,29 +25,81 @@ export function AnalyzingPage() {
   ];
 
   useEffect(() => {
-    // Load previews from sessionStorage
-    const storedPreviews = sessionStorage.getItem('vrsus_previews');
-    if (storedPreviews) {
-      setPreviews(JSON.parse(storedPreviews));
+    // 1. Get raw base64 from session storage
+    const rawA = sessionStorage.getItem('vrsus_pending_a');
+    const rawB = sessionStorage.getItem('vrsus_pending_b');
+    const mode = sessionStorage.getItem('vrsus_pending_mode') || 'general';
+
+    if (!rawA || !rawB) {
+      navigate('/duel');
+      return;
     }
 
-    const timer = setInterval(() => {
-      setStepIndex(prev => {
-        if (prev < steps.length - 1) return prev + 1;
-        clearInterval(timer);
-        return prev;
+    // Set previews for the scanning animation
+    const dataUrlA = `data:image/jpeg;base64,${rawA}`;
+    const dataUrlB = `data:image/jpeg;base64,${rawB}`;
+    
+    setPreviews({
+      previewA: dataUrlA,
+      previewB: dataUrlB
+    });
+
+    // 2. Start step animation timer
+    const stepTimer = setInterval(() => {
+      setStepIndex(prev => (prev < steps.length - 1 ? prev + 1 : prev));
+    }, 2000); // 2s per step for a smoother feel
+
+    // 3. Run Analysis Pipeline
+    analyzePhotos(rawA, rawB, mode)
+      .then(async (result) => {
+        // Prepare record for persistence
+        const record: DuelRecord = {
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          mode,
+          winner: result.winner,
+          margin: result.margin,
+          summary: result.summary,
+          previewA: dataUrlA,
+          previewB: dataUrlB,
+          scores: result.scores,
+          reasons_for_win: result.reasons_for_win,
+          weaknesses_of_loser: result.weaknesses_of_loser,
+        };
+
+        // Persistent save to local history
+        saveToHistory(record);
+
+        // Save to Supabase if logged in
+        let dbId = record.id;
+        if (user) {
+          const savedId = await saveDuelToSupabase(record, user.id);
+          if (savedId) dbId = savedId;
+        }
+
+        // Cleanup pending photos
+        sessionStorage.removeItem('vrsus_pending_a');
+        sessionStorage.removeItem('vrsus_pending_b');
+        sessionStorage.removeItem('vrsus_pending_mode');
+
+        // Store result for Results page
+        sessionStorage.setItem('vrsus_last_result', JSON.stringify({
+           ...record,
+           id: dbId // Use Supabase ID if available
+        }));
+
+        // Give the animation a tiny bit more time if it was too fast
+        setTimeout(() => {
+          navigate('/duel/results');
+        }, 800);
+      })
+      .catch(err => {
+        console.error('Analysis pipeline failed:', err);
+        navigate('/duel', { state: { error: 'Analysis failed. Please try again.' } });
       });
-    }, 1200);
 
-    const redirectTimer = setTimeout(() => {
-      navigate('/duel/results');
-    }, 6500);
-
-    return () => {
-      clearInterval(timer);
-      clearTimeout(redirectTimer);
-    };
-  }, [navigate]);
+    return () => clearInterval(stepTimer);
+  }, [navigate, user]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center container mx-auto px-4 max-w-6xl py-12">
@@ -65,7 +123,7 @@ export function AnalyzingPage() {
          {[previews.previewA, previews.previewB].map((img, i) => (
             <div key={i} className="relative rounded-3xl overflow-hidden aspect-[3/4] border border-border/50 bg-surface z-10">
                {img ? (
-                 <img src={img} alt="Scanning" className="w-full h-full object-cover opacity-50 grayscale transition-all duration-[6000ms] " />
+                 <img src={img} alt="Scanning" className="w-full h-full object-cover opacity-50 grayscale" />
                ) : (
                  <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
                     <span className="text-neutral-600">No Image</span>

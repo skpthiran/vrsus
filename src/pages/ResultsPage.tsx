@@ -10,22 +10,21 @@ export function ResultsPage() {
   const navigate = useNavigate();
   const shareCardRef = useRef<HTMLDivElement>(null);
   
-  const result = JSON.parse(sessionStorage.getItem('vrsus_result') || 'null');
-  const previews = JSON.parse(sessionStorage.getItem('vrsus_previews') || 'null');
+  const result = JSON.parse(sessionStorage.getItem('vrsus_last_result') || 'null');
 
   useEffect(() => {
-    if (!result || !previews) {
+    if (!result) {
       navigate('/duel');
     }
-  }, [result, previews, navigate]);
+  }, [result, navigate]);
 
-  if (!result || !previews) return null;
+  if (!result) return null;
 
   const winnerScore = result.scores[result.winner].total;
   const loserLetter = result.winner === 'A' ? 'B' : 'A';
   const loserScore = result.scores[loserLetter].total;
-  const winnerPreview = result.winner === 'A' ? previews.previewA : previews.previewB;
-  const loserPreview = result.winner === 'A' ? previews.previewB : previews.previewA;
+  const winnerPreview = result.winner === 'A' ? result.previewA : result.previewB;
+  const loserPreview = result.winner === 'A' ? result.previewB : result.previewA;
 
   const categoryNames = ['confidence', 'lighting', 'expression', 'grooming', 'composition', 'presence'];
 

@@ -63,59 +63,14 @@ export function CreateDuelPage() {
   };
 
   const handleAnalyze = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (!slotA.file || !slotB.file) throw new Error('Files missing');
-
-      const result = await analyzePhotos(slotA.base64!, slotB.base64!, mode);
-
-      
-      // Convert files to full data URLs for history (persistence)
-      const toDataURL = (file: File): Promise<string> => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-      };
-
-      const dataUrlA = await toDataURL(slotA.file);
-      const dataUrlB = await toDataURL(slotB.file);
-
-      const record: DuelRecord = {
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        mode,
-        winner: result.winner,
-        margin: result.margin,
-        summary: result.summary,
-        previewA: dataUrlA,
-        previewB: dataUrlB,
-        scores: result.scores,
-        reasons_for_win: result.reasons_for_win,
-        weaknesses_of_loser: result.weaknesses_of_loser,
-      };
-
-      saveToHistory(record);
-      
-      if (user) {
-        await saveDuelToSupabase(record, user.id);
-      }
-      
-      sessionStorage.setItem('vrsus_result', JSON.stringify(result));
-      sessionStorage.setItem('vrsus_previews', JSON.stringify({
-        previewA: slotA.preview,
-        previewB: slotB.preview
-      }));
-
-      navigate('/duel/analyzing');
-    } catch (err) {
-      console.error(err);
-      setError('Analysis failed. Please try again.');
-      setLoading(false);
-    }
+    if (!slotA.base64 || !slotB.base64) return;
+    
+    // Store in session storage for the Analyzing page to pick up
+    sessionStorage.setItem('vrsus_pending_a', slotA.base64);
+    sessionStorage.setItem('vrsus_pending_b', slotB.base64);
+    sessionStorage.setItem('vrsus_pending_mode', mode);
+    
+    navigate('/duel/analyzing');
   };
 
   return (
