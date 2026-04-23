@@ -113,7 +113,40 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       throw lastError ?? new Error(`${stageName}: all providers failed`);
     };
 
-    // ── STAGE 1: Visual Audit — Vision only (OpenRouter Qwen) ─────────────
+    // ── ANCHOR PASS: Force model to compare before scoring ─────────────────
+    log('Anchor pass starting...');
+    let anchorVerdict = { better: 'A', gap: 5, reason: 'Default' };
+    try {
+      const anchorMessages = [
+        {
+          role: 'system',
+          content: 'You are a direct attractiveness judge. Answer only with valid JSON.',
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Look at these two people. Be completely honest.
+1. Who is MORE attractive overall — A or B?
+2. How big is the gap? (1 = almost equal, 10 = completely different leagues)
+3. What is the single biggest visible difference?
+
+Return ONLY: {"better":"A","gap":7,"reason":"Person A has sharper jawline and cleaner skin vs Person B who has aged skin and weaker features"}`,
+            },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
+          ],
+        },
+      ];
+      const anchorRaw = await openrouterFetch('google/gemini-2.0-flash-001', anchorMessages, 300);
+      anchorVerdict = JSON.parse(extractJSON(anchorRaw));
+      log(`Anchor: ${anchorVerdict.better} wins by gap ${anchorVerdict.gap} — ${anchorVerdict.reason}`);
+    } catch (err: any) {
+      log('Anchor pass failed, continuing: ' + err.message);
+    }
+
+    // ── STAGE 1: Visual Audit — Vision only (Gemini) ────────────────────────
     log('Stage 1 starting...');
     const stage1Messages = [
       {
@@ -125,7 +158,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         content: [
           {
             type: 'text',
-            text: `Rate the PERSON'S attractiveness, not the photo quality. If someone took a sideways or tilted photo, judge their visible facial features as best you can — do NOT tank their score just because of angle.
+            text: `IMPORTANT CONTEXT: A preliminary comparison determined that Photo ${anchorVerdict.better} is MORE attractive with a gap score of ${anchorVerdict.gap}/10. Reason: "${anchorVerdict.reason}". Your individual scores MUST reflect this — the better person should score noticeably higher overall.
+
+Rate the PERSON'S attractiveness, not the photo quality. If someone took a sideways or tilted photo, judge their visible facial features as best you can — do NOT tank their score just because of angle.
 
 REALISTIC SCORE SCALE — follow this strictly:
 - 1–3: Genuinely ugly. Significant facial flaws, very unattractive.
@@ -167,7 +202,7 @@ Return ONLY:
     // If OpenRouter fails for vision, we generate neutral scores as graceful degradation
     let visualScores: any;
     try {
-      const raw1 = await openrouterFetch('meta-llama/llama-4-maverick', stage1Messages, 800);
+      const raw1 = await openrouterFetch('google/gemini-2.0-flash-001', stage1Messages, 800);
       visualScores = JSON.parse(extractJSON(raw1));
       
       // Force score spread if AI still played it safe
@@ -208,7 +243,7 @@ Return ONLY:
       },
       {
         role: 'user',
-        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: 2-3 sentences. State BLUNTLY why the winner is better and what specifically is wrong with the loser. Use words like "significantly weaker", "drags the score down", "no competition". Do NOT say "despite" or use diplomatic softeners. Example: "Person A's face card is in a different league. Person B has a forgettable face and the body score sealed the loss. There was no category where B had a clear enough edge to matter."\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nANCHOR CONTEXT: A preliminary visual audit decided ${anchorVerdict.better} is superior. Reason: "${anchorVerdict.reason}".\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: 2-3 sentences. State BLUNTLY why the winner is better and what specifically is wrong with the loser. Use words like "significantly weaker", "drags the score down", "no competition". Do NOT say "despite" or use diplomatic softeners. Your reasoning MUST align with the ANCHOR CONTEXT mentioned above.\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
     ];
 
