@@ -58,7 +58,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     log('Body parsed, mode: ' + mode + ', photoA length: ' + (photoA?.length || 0));
     const baseURL = 'https://openrouter.ai/api/v1';
 
-    const openrouterFetch = async (model: string, messages: any[]) => {
+    const openrouterFetch = async (model: string, messages: any[], maxTokens: number = 1000) => {
       const res = await fetch(`${baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -67,7 +67,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           'HTTP-Referer': 'https://vrsus.pages.dev',
           'X-Title': 'VRSUS',
         },
-        body: JSON.stringify({ model, messages }),
+        body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
       });
       
       const data = await res.json() as any;
@@ -105,14 +105,14 @@ Format (fill in numbers and descriptions):
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
         ],
       },
-    ]);
+    ], 800);
 
     const visualScores = JSON.parse(extractJSON(raw1));
     log('Stage 1 complete');
 
     // ── STAGE 2: Judgment — DeepSeek R1 ───────────────────────────────────
     log('Starting stage 2...');
-    const raw2 = await openrouterFetch('deepseek/deepseek-r1', [
+    const raw2 = await openrouterFetch('deepseek/deepseek-chat', [
       {
         role: 'system',
         content: 'You are VRSUS Judge. You receive visual scores and pick a winner. Respond only with valid JSON, no markdown fences, no reasoning text outside the JSON.',
@@ -121,7 +121,7 @@ Format (fill in numbers and descriptions):
         role: 'user',
         content: `Given these visual scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy the category scores EXACTLY as given above (do not change any values)\n- Calculate total as: sum of all 6 category scores multiplied by (100/60) to normalize to 100\n- Round total to nearest integer\n- Pick the winner based on higher total\n- Calculate margin as the difference between the two totals\n\nReturn ONLY this JSON with no extra text:\n{"winner":"A","scores":{"A":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0},"B":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0}},"margin":0,"winning_edge":"One sentence on the exact deciding factor.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
-    ]);
+    ], 800);
 
     const judgment = JSON.parse(extractJSON(raw2));
     log('Stage 2 complete');
@@ -140,7 +140,7 @@ Format (fill in numbers and descriptions):
         role: 'user',
         content: `The losing photo (Photo ${loser}) had these scores: ${JSON.stringify(loserScores)}\nObservation: "${loserScores.observation}"\nMode: "${mode}"\n\nWrite 3 specific, actionable improvement tips. Return ONLY this JSON:\n{"weaknesses_of_loser":["tip 1","tip 2","tip 3"]}`,
       },
-    ]);
+    ], 800);
 
     const tips = JSON.parse(extractJSON(raw3));
     log('Stage 3 complete');
