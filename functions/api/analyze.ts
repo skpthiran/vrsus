@@ -115,6 +115,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     // ── STAGE 1: Visual Audit — Vision only (OpenRouter Qwen) ─────────────
     log('Stage 1 starting...');
+    const stage1Messages = [
       {
         role: 'system',
         content: 'You are a blunt attractiveness rater. You MUST differentiate between people. Giving the same score to two different people is a failure. Respond only with valid JSON, no markdown fences.',
