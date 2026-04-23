@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Share2, Download, Copy, RefreshCw, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
 
 export function ResultsPage() {
   const navigate = useNavigate();
+  const shareCardRef = useRef<HTMLDivElement>(null);
+  
   const result = JSON.parse(sessionStorage.getItem('vrsus_result') || 'null');
   const previews = JSON.parse(sessionStorage.getItem('vrsus_previews') || 'null');
 
@@ -25,6 +28,30 @@ export function ResultsPage() {
   const loserPreview = result.winner === 'A' ? previews.previewB : previews.previewA;
 
   const categoryNames = ['confidence', 'lighting', 'expression', 'grooming', 'composition', 'presence'];
+
+  const handleDownload = async () => {
+    if (!shareCardRef.current) return;
+    try {
+      const canvas = await html2canvas(shareCardRef.current, {
+        width: 1080,
+        height: 1080,
+        scale: 1,
+        useCORS: true,
+        backgroundColor: '#030303',
+      });
+      const link = document.createElement('a');
+      link.download = `vrsus-duel-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Share card generation failed:', err);
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Link copied to clipboard!');
+  };
 
   return (
     <div className="flex-1 container mx-auto px-4 max-w-6xl py-12">
@@ -198,11 +225,11 @@ export function ResultsPage() {
                    <Share2 className="mr-2 w-5 h-5" />
                    Share to Socials
                 </Button>
-                <Button size="lg" variant="outline" className="glass">
+                <Button size="lg" variant="outline" className="glass" onClick={handleCopyLink}>
                    <Copy className="mr-2 w-5 h-5" />
                    Copy Link
                 </Button>
-                <Button size="lg" variant="ghost" className="text-neutral-400">
+                <Button size="lg" variant="ghost" className="text-neutral-400" onClick={handleDownload}>
                    <Download className="mr-2 w-5 h-5" />
                    Save Image
                 </Button>
@@ -217,6 +244,74 @@ export function ResultsPage() {
                 </Button>
              </Link>
           </div>
+       </div>
+
+       {/* Hidden Share Card for Export */}
+       <div
+         ref={shareCardRef}
+         style={{
+           position: 'fixed',
+           left: '-9999px',
+           top: 0,
+           width: '1080px',
+           height: '1080px',
+           background: '#030303',
+           display: 'flex',
+           flexDirection: 'column',
+           alignItems: 'center',
+           justifyContent: 'center',
+           padding: '60px',
+           fontFamily: 'Inter, sans-serif',
+           gap: '32px',
+         }}
+       >
+         {/* Top label */}
+         <div style={{ color: '#6d28d9', fontSize: '18px', fontWeight: 700, letterSpacing: '4px', textTransform: 'uppercase' }}>
+           VRSUS — AI Photo Battle
+         </div>
+
+         {/* Photos side by side */}
+         <div style={{ display: 'flex', gap: '24px', width: '100%', height: '600px', position: 'relative' }}>
+           {/* Loser photo */}
+           <div style={{ flex: 1, borderRadius: '24px', overflow: 'hidden', position: 'relative', opacity: 0.7 }}>
+             <img src={loserPreview || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+             <div style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'rgba(0,0,0,0.8)', color: 'white', padding: '8px 16px', borderRadius: '12px', fontSize: '28px', fontWeight: 900 }}>
+               {loserScore}
+             </div>
+             <div style={{ position: 'absolute', top: '16px', left: '16px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '4px 12px', borderRadius: '8px', fontSize: '16px', fontWeight: 700 }}>
+               Photo {result.winner === 'A' ? 'B' : 'A'}
+             </div>
+           </div>
+
+           {/* VS badge */}
+           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '72px', height: '72px', background: '#030303', border: '2px solid #6d28d9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px', fontWeight: 900, zIndex: 10 }}>
+             VS
+           </div>
+
+           {/* Winner photo */}
+           <div style={{ flex: 1, borderRadius: '24px', overflow: 'hidden', position: 'relative', border: '4px solid #fbbf24', boxShadow: '0 0 60px rgba(251,191,36,0.4)' }}>
+             <img src={winnerPreview || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+             <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#fbbf24', color: 'black', padding: '6px 14px', borderRadius: '8px', fontSize: '16px', fontWeight: 900 }}>
+               🏆 WINNER
+             </div>
+             <div style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'rgba(0,0,0,0.8)', color: '#fbbf24', padding: '8px 16px', borderRadius: '12px', fontSize: '28px', fontWeight: 900 }}>
+               {winnerScore}
+             </div>
+             <div style={{ position: 'absolute', top: '16px', left: '16px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '4px 12px', borderRadius: '8px', fontSize: '16px', fontWeight: 700 }}>
+               Photo {result.winner}
+             </div>
+           </div>
+         </div>
+
+         {/* Summary */}
+         <div style={{ color: '#e5e5e5', fontSize: '22px', textAlign: 'center', maxWidth: '800px', fontStyle: 'italic', lineHeight: 1.5 }}>
+           "{result.summary}"
+         </div>
+
+         {/* Watermark */}
+         <div style={{ color: '#444', fontSize: '16px', letterSpacing: '3px', textTransform: 'uppercase' }}>
+           vrsus.app
+         </div>
        </div>
     </div>
   );
