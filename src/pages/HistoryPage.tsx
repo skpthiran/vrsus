@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Trophy, Trash2, Calendar, Zap, ArrowRight, Ghost } from 'lucide-react';
+import { Trophy, Trash2, Calendar, ArrowRight, Ghost, Globe, Lock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { getHistory, deleteFromHistory, clearHistory } from '../lib/history';
 import { DuelRecord } from '../types/history';
@@ -8,17 +8,16 @@ import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserDuels, deleteDuel, toggleDuelPrivacy } from '../lib/duels';
 import { supabase } from '../lib/supabase';
-import { Globe, Lock, Share2 } from 'lucide-react';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export function HistoryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [duels, setDuels] = useState<DuelRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [duels, setDuels] = React.useState<DuelRecord[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [page, setPage] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const PAGE_SIZE = 6;
 
   const loadMore = React.useCallback(async () => {
@@ -61,17 +60,14 @@ export function HistoryPage() {
     setLoading(false);
   }, [loadingMore, hasMore, page, user]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Reset and reload when user changes
     setDuels([]);
     setPage(0);
     setHasMore(true);
-    // Explicitly call loadMore for the new user/initial state
-    // But wait, the sentinel might not fire yet, so we call it.
-    // However, the rule is "Use a SINGLE useEffect that triggers loadMore on mount"
   }, [user]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadMore();
   }, [user]);
 
@@ -186,7 +182,7 @@ export function HistoryPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {duels.map((record) => (
-            <DuelCard 
+            <DuelCardInternal 
               key={record.id} 
               record={record} 
               onDelete={handleDelete} 
@@ -201,17 +197,18 @@ export function HistoryPage() {
   );
 }
 
-function DuelCard({ record, onDelete, onTogglePrivacy, onClick }: { 
+function DuelCardInternal({ record, onDelete, onTogglePrivacy, onClick }: { 
   record: DuelRecord, 
   onDelete: (e: React.MouseEvent, id: string) => void, 
   onTogglePrivacy: (e: React.MouseEvent, id: string, current: boolean) => void,
-  onClick: () => void 
+  onClick: () => void,
+  key?: any 
 }) {
-  const imgRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const imgRef = React.useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = React.useState(false);
   const winnerLetter = record.winner;
 
-  useEffect(() => {
+  React.useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setVisible(true); },
       { threshold: 0.1 }

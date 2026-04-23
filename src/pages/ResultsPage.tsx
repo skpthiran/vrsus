@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Share2, Download, Copy, RefreshCw, CheckCircle2, ArrowUpRight, Loader2 } from 'lucide-react';
@@ -9,13 +9,13 @@ import { getDuelById } from '../lib/duels';
 
 export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const shareCardRef = useRef<HTMLDivElement>(null);
+  const navigate = React.useNavigate();
+  const shareCardRef = React.useRef<HTMLDivElement>(null);
   
   const [result, setResult] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     async function loadResult() {
       setLoading(true);
       
@@ -100,7 +100,7 @@ export function ResultsPage() {
         useCORS: true,
         backgroundColor: '#030303',
         logging: false,
-      });
+      } as any);
       const link = document.createElement('a');
       link.download = `vrsus-duel-${result.id || Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');

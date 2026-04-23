@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Flame, Clock, Trophy, MapPin, Grid, Layers, Zap, Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getPublicDuels } from '@/lib/duels';
-import { DuelCard } from '@/components/DuelCard';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Search, Grid, Layers, Zap, Trophy, Info } from 'lucide-react';
+import { cn } from '../lib/utils';
+import { getPublicDuels } from '../lib/duels';
+import { DuelCard } from '../components/DuelCard';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: Grid },
@@ -15,13 +15,13 @@ const CATEGORIES = [
 
 export function ExplorePage() {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [duels, setDuels] = useState<any[]>([]);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [activeCategory, setActiveCategory] = React.useState('all');
+  const [duels, setDuels] = React.useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [page, setPage] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const PAGE_SIZE = 6;
 
   const loadMore = React.useCallback(async () => {
@@ -54,7 +54,7 @@ export function ExplorePage() {
     }
   }, [loadingMore, hasMore, page]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadMore();
   }, []);
 
@@ -141,7 +141,6 @@ export function ExplorePage() {
                       <Link 
                         to={`/results/${entry.id}`}
                         className="group flex-1"
-                        onClick={() => sessionStorage.setItem('vrsus_last_result', JSON.stringify(entry))}
                       >{entry.profiles?.display_name || 'Anonymous'}
                       </Link>
                       <div className="text-xs text-neutral-500 font-medium">
@@ -167,7 +166,7 @@ export function ExplorePage() {
             <Trophy className="mx-auto text-neutral-700 mb-4" size={48} />
             <p className="text-neutral-500 font-bold">No live duels yet.</p>
             <button 
-              onClick={() => navigate('/create')}
+              onClick={() => navigate('/duel')}
               className="mt-4 text-accent font-black hover:underline"
             >
               Be the first to battle →

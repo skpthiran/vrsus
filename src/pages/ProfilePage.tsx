@@ -1,6 +1,6 @@
-import React, { useMemo, useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trophy, Star, Zap, Calendar, Settings, Ghost, ArrowRight, LogIn } from 'lucide-react';
+import { Trophy, Star, Zap, Settings, Ghost, ArrowRight, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserDuels } from '../lib/duels';
 import { supabase } from '../lib/supabase';
@@ -8,11 +8,11 @@ import { getHistory } from '../lib/history';
 import { cn } from '../lib/utils';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
-function DuelRow({ record, onClick }: { record: any, onClick: () => void }) {
-  const imgRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+function DuelRow({ record, onClick }: { record: any, onClick: () => void, key?: any }) {
+  const imgRef = React.useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setVisible(true); },
       { threshold: 0.1 }
@@ -78,13 +78,13 @@ function DuelRow({ record, onClick }: { record: any, onClick: () => void }) {
 export function ProfilePage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const [duels, setDuels] = useState<any[]>([]);
-  const [displayName, setDisplayName] = useState('');
-  const [streak, setStreak] = useState({ current: 0, best: 0 });
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [duels, setDuels] = React.useState<any[]>([]);
+  const [displayName, setDisplayName] = React.useState('');
+  const [streak, setStreak] = React.useState({ current: 0, best: 0 });
+  const [loading, setLoading] = React.useState(true);
+  const [page, setPage] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const PAGE_SIZE = 6;
 
   const loadMore = React.useCallback(async () => {
@@ -123,7 +123,7 @@ export function ProfilePage() {
     setLoading(false);
   }, [loadingMore, hasMore, page, user]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     async function loadProfile() {
       if (user) {
         const { data: profile } = await supabase
@@ -147,15 +147,15 @@ export function ProfilePage() {
   }, [user]);
 
   // Initial load
-  useEffect(() => {
+  React.useEffect(() => {
     loadMore();
-  }, [user]);
+  }, [user, loadMore]);
 
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
-  const stats = useMemo(() => {
+  const stats = React.useMemo(() => {
     const total = duels.length;
-    if (total === 0) return { total, avgScore: 0, bestScore: 0, favoriteMode: 'None', streak: 0 };
+    if (total === 0) return { total, avgScore: 0, bestScore: 0, favoriteMode: 'None' };
 
     const avgScore = Math.round(
       duels.reduce((sum, r) => sum + Math.max(r.scores?.A?.total ?? 0, r.scores?.B?.total ?? 0), 0) / total
@@ -170,7 +170,7 @@ export function ProfilePage() {
       return acc;
     }, {} as Record<string, number>);
 
-    const favoriteMode = Object.entries(modeCounts).sort((a, b) => b[1] - a[1])[0][0];
+    const favoriteMode = Object.entries(modeCounts).sort((a, b) => (b[1] as number) - (a[1] as number))[0][0];
 
     return { total, avgScore, bestScore, favoriteMode };
   }, [duels]);

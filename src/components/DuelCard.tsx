@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ThumbsUp, ThumbsDown, Flame, MessageCircle, Share2, Send, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,15 +12,16 @@ interface DuelCardProps {
 
 export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardProps) {
   const { user } = useAuth();
-  const imgRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  const [reactions, setReactions] = useState({ agree: 0, disagree: 0, fire: 0, userReaction: null as string | null });
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<any[]>([]);
-  const [newComment, setNewComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const imgRef = React.useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = React.useState(false);
+  const [reactions, setReactions] = React.useState({ agree: 0, disagree: 0, fire: 0, userReaction: null as string | null });
+  const [showComments, setShowComments] = React.useState(false);
+  const [comments, setComments] = React.useState<any[]>([]);
+  const [newComment, setNewComment] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
   const isSeedDuel = duel.id?.startsWith('seed-');
-  useEffect(() => {
+
+  React.useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setVisible(true); },
       { threshold: 0.1 }
@@ -29,7 +30,7 @@ export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardPr
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!showReactions) return;
     if (isSeedDuel) {
       setReactions({ agree: 12, disagree: 3, fire: 28, userReaction: null });
