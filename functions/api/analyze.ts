@@ -6,10 +6,29 @@ interface Env {
 }
 
 function extractJSON(text: string): string {
+  // Remove <think>...</think> blocks (DeepSeek R1)
+  text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  
+  // Remove markdown code fences
+  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  
+  // Find the outermost { } block
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('No JSON found in response');
-  return text.slice(start, end + 1);
+  
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error('No valid JSON object found in response: ' + text.slice(0, 200));
+  }
+  
+  let jsonStr = text.slice(start, end + 1);
+  
+  // Fix common issues: remove trailing commas before } or ]
+  jsonStr = jsonStr.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+  
+  // Fix unescaped newlines inside strings
+  jsonStr = jsonStr.replace(/:\s*"([^"]*)\n([^"]*)"/g, ': "$1 $2"');
+  
+  return jsonStr;
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -77,7 +96,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         content: [
           {
             type: 'text',
-            text: `Analyze Photo A and Photo B for a "${mode}" context. Score each photo 1-10 on: confidence, lighting, expression, grooming, composition, presence. Return ONLY this JSON with no extra text:\n{"A":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"observation":"2 sentence description"},"B":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"observation":"2 sentence description"}}`,
+            text: `You are analyzing two photos for a "${mode}" context. Score each 1-10 on six criteria. You MUST respond with ONLY a JSON object, no other text.
+
+Format (fill in numbers and descriptions):
+{"A":{"confidence":7,"lighting":8,"expression":6,"grooming":7,"composition":8,"presence":7,"observation":"Description of photo A in one sentence."},"B":{"confidence":6,"lighting":7,"expression":8,"grooming":6,"composition":7,"presence":8,"observation":"Description of photo B in one sentence."}}`,
           },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
