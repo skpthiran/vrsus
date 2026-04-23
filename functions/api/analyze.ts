@@ -1,3 +1,6 @@
+// Log helper  
+const log = (msg: string) => console.log(`[VRSUS] ${msg}`);
+
 interface Env {
   OPENROUTER_API_KEY: string;
 }
@@ -16,14 +19,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
+  // Debug: check env vars are present
+  const apiKey = context.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    log('CRITICAL: Missing OPENROUTER_API_KEY');
+    return Response.json({ error: 'Missing OPENROUTER_API_KEY', detail: 'API key not found in environment' }, { status: 500, headers: corsHeaders });
+  }
+  log('API key present: ' + !!apiKey);
+
   try {
-    const { photoA, photoB, mode = 'general' } = await context.request.json() as any;
+    const body = await context.request.json() as any;
+    const { photoA, photoB, mode = 'general' } = body;
 
     if (!photoA || !photoB) {
+      log('ERROR: Photo data missing in request');
       return Response.json({ error: 'Both photoA and photoB are required' }, { status: 400, headers: corsHeaders });
     }
 
-    const apiKey = context.env.OPENROUTER_API_KEY;
+    log('Body parsed, mode: ' + mode + ', photoA length: ' + (photoA?.length || 0));
     const baseURL = 'https://openrouter.ai/api/v1';
 
     const openrouterFetch = async (model: string, messages: any[]) => {
@@ -42,6 +55,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     };
 
     // ── STAGE 1: Visual Audit — Qwen VL Plus ──────────────────────────────
+    log('Starting stage 1...');
     const raw1 = await openrouterFetch('qwen/qwen-vl-plus', [
       {
         role: 'system',
@@ -61,8 +75,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ]);
 
     const visualScores = JSON.parse(extractJSON(raw1));
+    log('Stage 1 complete');
 
     // ── STAGE 2: Judgment — DeepSeek R1 ───────────────────────────────────
+    log('Starting stage 2...');
     const raw2 = await openrouterFetch('deepseek/deepseek-r1', [
       {
         role: 'system',
@@ -75,8 +91,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ]);
 
     const judgment = JSON.parse(extractJSON(raw2));
+    log('Stage 2 complete');
 
     // ── STAGE 3: Glow-Up Tips — Llama 3.3 70B ────────────────────────────
+    log('Starting stage 3...');
     const loser = judgment.winner === 'A' ? 'B' : 'A';
     const loserScores = visualScores[loser];
 
@@ -92,6 +110,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ]);
 
     const tips = JSON.parse(extractJSON(raw3));
+    log('Stage 3 complete');
 
     return Response.json({
       winner: judgment.winner,
@@ -103,8 +122,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }, { headers: corsHeaders });
 
   } catch (err: any) {
+    log('PIPELINE CRASH: ' + err.message);
     console.error('Pipeline error:', err.message);
-    return Response.json({ error: 'Analysis failed', detail: err.message }, { status: 500, headers: corsHeaders });
+    return Response.json({ 
+      error: 'Analysis failed', 
+      detail: err.message,
+      stack: err.stack?.split('\n').slice(0,3).join(' | ')
+    }, { status: 500, headers: corsHeaders });
   }
 };
 
