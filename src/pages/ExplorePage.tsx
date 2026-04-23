@@ -4,6 +4,7 @@ import { Search, Flame, Clock, Trophy, MapPin, Grid, Layers, Zap, Info } from 'l
 import { cn } from '@/lib/utils';
 import { getPublicDuels } from '@/lib/duels';
 import { DuelCard } from '@/components/DuelCard';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: Grid },
@@ -18,39 +19,45 @@ export function ExplorePage() {
   const [dbDuels, setDbDuels] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const duels = await getPublicDuels(page, 10);
+      if (duels.length < 10) setHasMore(false);
+
+      const mapped = duels.map(d => ({
+        id: d.id,
+        mode: d.mode.charAt(0).toUpperCase() + d.mode.slice(1),
+        winner: d.winner,
+        aScore: d.score_a,
+        bScore: d.score_b,
+        imgA: d.preview_a,
+        imgB: d.preview_b,
+        reason: d.summary,
+        isOwn: false,
+        createdAt: d.created_at,
+      }));
+
+      setDbDuels(prev => [...prev, ...mapped]);
+      setPage(prev => prev + 1);
+    } catch (err) {
+      console.error('❌ Failed to load explore data:', err);
+    } finally {
+      setLoadingMore(false);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function init() {
-      setLoading(true);
-      try {
-        console.log('Fetching public duels...');
-        const duels = await getPublicDuels();
-        const leaderboardData: any[] = [];
-        
-        console.log('Explore duels loaded:', duels);
-
-        setDbDuels(duels.map(d => ({
-          id: d.id,
-          mode: d.mode.charAt(0).toUpperCase() + d.mode.slice(1),
-          winner: d.winner,
-          aScore: d.score_a,
-          bScore: d.score_b,
-          imgA: d.preview_a,
-          imgB: d.preview_b,
-          reason: d.summary,
-          isOwn: false,
-          createdAt: d.created_at,
-        })));
-        
-        setLeaderboard(leaderboardData);
-      } catch (err) {
-        console.error('❌ Failed to load explore data:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    init();
+    loadMore();
   }, []);
+
+  const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
   const handleCardClick = (duel: any) => {
     // If it's the user's own duel, they can click it for details
@@ -178,7 +185,7 @@ export function ExplorePage() {
             </div>
           ))
         )}
-        <div className="h-4" />
+        <div ref={sentinelRef} className="h-4" />
       </div>
 
       {/* Daily Leaderboard Card (Social proof) */}

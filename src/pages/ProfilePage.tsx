@@ -6,6 +6,7 @@ import { getUserDuels } from '../lib/duels';
 import { supabase } from '../lib/supabase';
 import { getHistory } from '../lib/history';
 import { cn } from '../lib/utils';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -14,9 +15,48 @@ export function ProfilePage() {
   const [displayName, setDisplayName] = useState('');
   const [streak, setStreak] = useState({ current: 0, best: 0 });
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    if (user) {
+      try {
+        const duels = await getUserDuels(user.id, page, 10);
+        if (duels.length < 10) setHasMore(false);
+
+        const mapped = duels.map(d => ({
+          id: d.id,
+          createdAt: d.created_at,
+          mode: d.mode,
+          winner: d.winner,
+          margin: d.margin,
+          summary: d.summary,
+          previewA: d.image_a_url,
+          previewB: d.image_b_url,
+          scores: d.scores,
+          reasons_for_win: d.reasons_for_win,
+          weaknesses_of_loser: d.weaknesses_of_loser,
+        }));
+
+        setHistory(prev => [...prev, ...mapped]);
+        setPage(prev => prev + 1);
+      } catch {
+        if (page === 0) setHistory(getHistory());
+        setHasMore(false);
+      }
+    } else {
+      if (page === 0) setHistory(getHistory());
+      setHasMore(false);
+    }
+    setLoadingMore(false);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function load() {
+    async function loadProfile() {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -28,33 +68,24 @@ export function ProfilePage() {
           current: profile?.current_streak || 0,
           best: profile?.best_streak || 0,
         });
-
-        // Load duels
-        try {
-          const duels = await getUserDuels(user.id);
-          setHistory(duels.map(d => ({
-            id: d.id,
-            createdAt: d.created_at,
-            mode: d.mode,
-            winner: d.winner,
-            margin: d.margin,
-            summary: d.summary,
-            previewA: d.image_a_url,
-            previewB: d.image_b_url,
-            scores: d.scores,
-            reasons_for_win: d.reasons_for_win,
-            weaknesses_of_loser: d.weaknesses_of_loser,
-          })));
-        } catch {
-          setHistory(getHistory());
-        }
-      } else {
-        setHistory(getHistory());
       }
-      setLoading(false);
     }
-    load();
+    loadProfile();
+    
+    // Reset and load duels when user changes
+    setHistory([]);
+    setPage(0);
+    setHasMore(true);
   }, [user]);
+
+  // Initial load of duels
+  useEffect(() => {
+    if (page === 0 && hasMore && !loadingMore) {
+      loadMore();
+    }
+  }, [page, hasMore, loadingMore, user]);
+
+  const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
   const stats = useMemo(() => {
     const total = history.length;
@@ -217,7 +248,7 @@ export function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {history.slice(0, 5).map(record => (
+                {history.map(record => (
                   <button
                     key={record.id}
                     onClick={() => handleViewDuel(record)}
@@ -265,6 +296,7 @@ export function ProfilePage() {
                     <ArrowRight size={16} className="text-neutral-600 flex-shrink-0" />
                   </button>
                 ))}
+                <div ref={sentinelRef} className="h-4" />
               </div>
             )}
           </div>

@@ -9,46 +9,72 @@ import { useAuth } from '../contexts/AuthContext';
 import { getUserDuels, deleteDuel, toggleDuelPrivacy } from '../lib/duels';
 import { supabase } from '../lib/supabase';
 import { Globe, Lock, Share2 } from 'lucide-react';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export function HistoryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [history, setHistory] = useState<DuelRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    if (user) {
+      try {
+        const duels = await getUserDuels(user.id, page, 10);
+        if (duels.length < 10) setHasMore(false);
+
+        const mapped = duels.map(d => ({
+          id: d.id,
+          createdAt: d.created_at,
+          mode: d.mode,
+          winner: d.winner,
+          margin: d.margin,
+          summary: d.summary,
+          previewA: d.image_a_url,
+          previewB: d.image_b_url,
+          scores: d.scores,
+          reasons_for_win: d.reasons_for_win,
+          weaknesses_of_loser: d.weaknesses_of_loser,
+          verdict: d.verdict,
+          isPublic: d.is_public,
+        }));
+
+        setHistory(prev => [...prev, ...mapped]);
+        setPage(prev => prev + 1);
+      } catch (error) {
+        console.error("Failed to load DB history:", error);
+        if (page === 0) setHistory(getHistory());
+        setHasMore(false);
+      }
+    } else {
+      if (page === 0) setHistory(getHistory());
+      setHasMore(false);
+    }
+    setLoadingMore(false);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      if (user) {
-        try {
-          const duels = await getUserDuels(user.id);
-          // map Supabase shape to DuelRecord shape
-          setHistory(duels.map(d => ({
-            id: d.id,
-            createdAt: d.created_at,
-            mode: d.mode,
-            winner: d.winner,
-            margin: d.margin,
-            summary: d.summary,
-            previewA: d.image_a_url,
-            previewB: d.image_b_url,
-            scores: d.scores,
-            reasons_for_win: d.reasons_for_win,
-            weaknesses_of_loser: d.weaknesses_of_loser,
-            verdict: d.verdict,
-            isPublic: d.is_public,
-          })));
-        } catch (error) {
-          console.error("Failed to load DB history:", error);
-          setHistory(getHistory());
-        }
-      } else {
-        setHistory(getHistory());
-      }
-      setLoading(false);
-    }
-    load();
+    // Reset and load when user changes
+    setHistory([]);
+    setPage(0);
+    setHasMore(true);
+    // The loadMore will be triggered by the sentinel or we trigger it once manually
   }, [user]);
+
+  // Initial load
+  useEffect(() => {
+    if (page === 0 && hasMore && !loadingMore) {
+      loadMore();
+    }
+  }, [page, hasMore, loadingMore, user]);
+
+  const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -168,6 +194,7 @@ export function HistoryPage() {
           ))}
         </div>
       )}
+      <div ref={sentinelRef} className="h-4" />
     </div>
   );
 }
