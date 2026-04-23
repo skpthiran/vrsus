@@ -12,12 +12,23 @@ interface DuelCardProps {
 
 export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardProps) {
   const { user } = useAuth();
+  const imgRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
   const [reactions, setReactions] = useState({ agree: 0, disagree: 0, fire: 0, userReaction: null as string | null });
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const isSeedDuel = duel.id?.startsWith('seed-');
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.1 }
+    );
+    if (imgRef.current) observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!showReactions) return;
     if (isSeedDuel) {
@@ -88,11 +99,11 @@ export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardPr
         onClick={() => onCardClick && onCardClick(duel)}
       >
         {/* Photo A */}
-        <div className="relative overflow-hidden">
+        <div ref={imgRef} className="relative overflow-hidden">
           <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 overflow-hidden flex items-center justify-center">
-            {duel.imgA ? (
+            {visible && (duel.preview_a || duel.imgA) ? (
               <img 
-                src={duel.imgA} 
+                src={duel.preview_a || duel.imgA} 
                 alt="A" 
                 className={cn("w-full h-full object-cover transition-all", duel.winner === 'B' ? "opacity-50 grayscale-[40%]" : "")} 
                 loading="lazy"
@@ -121,9 +132,9 @@ export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardPr
         {/* Photo B */}
         <div className="relative overflow-hidden">
           <div className="w-full h-full bg-gradient-to-br from-neutral-900 to-neutral-800 overflow-hidden flex items-center justify-center">
-            {duel.imgB ? (
+            {visible && (duel.preview_b || duel.imgB) ? (
               <img 
-                src={duel.imgB} 
+                src={duel.preview_b || duel.imgB} 
                 alt="B" 
                 className={cn("w-full h-full object-cover transition-all", duel.winner === 'A' ? "opacity-50 grayscale-[40%]" : "")} 
                 loading="lazy"

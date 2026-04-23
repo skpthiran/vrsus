@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trophy, Star, Zap, Calendar, Settings, Ghost, ArrowRight, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,73 @@ import { supabase } from '../lib/supabase';
 import { getHistory } from '../lib/history';
 import { cn } from '../lib/utils';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+
+function DuelRow({ record, onClick }: { record: any, onClick: () => void }) {
+  const imgRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.1 }
+    );
+    if (imgRef.current) observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full bg-surface border border-border rounded-2xl p-4 flex items-center gap-4 hover:border-accent/30 transition-colors text-left"
+    >
+      {/* Thumbnails */}
+      <div ref={imgRef} className="flex -space-x-3 flex-shrink-0">
+        {[record.previewA, record.previewB].map((img, i) => (
+          <div key={i} className={cn(
+            "w-12 h-12 rounded-xl overflow-hidden border-2 border-background",
+            i === 0 ? "bg-gradient-to-br from-neutral-800 to-neutral-900" : "bg-gradient-to-br from-neutral-900 to-neutral-800",
+            i === 1 && "relative"
+          )}>
+            {visible && img ? (
+              <img 
+                src={img} 
+                alt="" 
+                className="w-full h-full object-cover" 
+                loading="lazy" 
+                decoding="async" 
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="font-display font-black text-lg text-white/10 select-none">
+                  {i === 0 ? 'A' : 'B'}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-xs font-bold text-yellow-400">👑 Photo {record.winner} wins</span>
+          <span className="text-xs text-neutral-500 capitalize">{record.mode}</span>
+        </div>
+        <p className="text-xs text-neutral-400 truncate">{record.summary || 'No summary'}</p>
+      </div>
+
+      {/* Score */}
+      <div className="flex-shrink-0 text-right">
+        <div className="text-lg font-display font-bold text-accent">
+          {record.winner === 'A' ? record.scores?.A?.total : record.scores?.B?.total}
+        </div>
+        <div className="text-xs text-neutral-500">score</div>
+      </div>
+
+      <ArrowRight size={16} className="text-neutral-600 flex-shrink-0" />
+    </button>
+  );
+}
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -18,7 +85,7 @@ export function ProfilePage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 6;
 
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -35,8 +102,8 @@ export function ProfilePage() {
           winner: d.winner,
           margin: d.margin,
           summary: d.summary,
-          previewA: d.image_a_url,
-          previewB: d.image_b_url,
+          previewA: d.preview_a,
+          previewB: d.preview_b,
           scores: d.scores,
           reasons_for_win: d.reasons_for_win,
           weaknesses_of_loser: d.weaknesses_of_loser,
@@ -247,57 +314,11 @@ export function ProfilePage() {
             ) : (
               <div className="space-y-3">
                 {duels.map(record => (
-                  <button
-                    key={record.id}
-                    onClick={() => handleViewDuel(record)}
-                    className="w-full bg-surface border border-border rounded-2xl p-4 flex items-center gap-4 hover:border-accent/30 transition-colors text-left"
-                  >
-                    {/* Thumbnails */}
-                    <div className="flex -space-x-3 flex-shrink-0">
-                      {[record.previewA, record.previewB].map((img, i) => (
-                        <div key={i} className={cn(
-                          "w-12 h-12 rounded-xl overflow-hidden border-2 border-background",
-                          i === 0 ? "bg-gradient-to-br from-neutral-800 to-neutral-900" : "bg-gradient-to-br from-neutral-900 to-neutral-800",
-                          i === 1 && "relative"
-                        )}>
-                          {img ? (
-                            <img 
-                              src={img} 
-                              alt="" 
-                              className="w-full h-full object-cover" 
-                              loading="lazy" 
-                              decoding="async" 
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="font-display font-black text-lg text-white/10 select-none">
-                                {i === 0 ? 'A' : 'B'}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-bold text-yellow-400">👑 Photo {record.winner} wins</span>
-                        <span className="text-xs text-neutral-500 capitalize">{record.mode}</span>
-                      </div>
-                      <p className="text-xs text-neutral-400 truncate">{record.summary || 'No summary'}</p>
-                    </div>
-
-                    {/* Score */}
-                    <div className="flex-shrink-0 text-right">
-                      <div className="text-lg font-display font-bold text-accent">
-                        {record.winner === 'A' ? record.scores?.A?.total : record.scores?.B?.total}
-                      </div>
-                      <div className="text-xs text-neutral-500">score</div>
-                    </div>
-
-                    <ArrowRight size={16} className="text-neutral-600 flex-shrink-0" />
-                  </button>
+                  <DuelRow 
+                    key={record.id} 
+                    record={record} 
+                    onClick={() => handleViewDuel(record)} 
+                  />
                 ))}
                 <div ref={sentinelRef} className="h-4" />
               </div>

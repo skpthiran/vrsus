@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Trophy, Trash2, Calendar, Zap, ArrowRight, Ghost } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -19,7 +19,7 @@ export function HistoryPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 6;
 
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -37,8 +37,8 @@ export function HistoryPage() {
           winner: d.winner,
           margin: d.margin,
           summary: d.summary,
-          previewA: d.image_a_url,
-          previewB: d.image_b_url,
+          previewA: d.preview_a,
+          previewB: d.preview_b,
           scores: d.scores,
           reasons_for_win: d.reasons_for_win,
           weaknesses_of_loser: d.weaknesses_of_loser,
@@ -207,7 +207,19 @@ function DuelCard({ record, onDelete, onTogglePrivacy, onClick }: {
   onTogglePrivacy: (e: React.MouseEvent, id: string, current: boolean) => void,
   onClick: () => void 
 }) {
+  const imgRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
   const winnerLetter = record.winner;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.1 }
+    );
+    if (imgRef.current) observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const loserLetter = winnerLetter === 'A' ? 'B' : 'A';
   const winnerScore = record.scores[winnerLetter].total;
   const loserScore = record.scores[loserLetter].total;
@@ -253,8 +265,8 @@ function DuelCard({ record, onDelete, onTogglePrivacy, onClick }: {
 
       {/* Side by Side Preview */}
       <div className="grid grid-cols-2 gap-2 h-40">
-        <div className="rounded-2xl overflow-hidden relative bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/5 flex items-center justify-center">
-          {record.previewA ? (
+        <div ref={imgRef} className="rounded-2xl overflow-hidden relative bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/5 flex items-center justify-center">
+          {visible && record.previewA ? (
             <img 
               src={record.previewA} 
               alt="A" 
@@ -276,7 +288,7 @@ function DuelCard({ record, onDelete, onTogglePrivacy, onClick }: {
           )}
         </div>
         <div className="rounded-2xl overflow-hidden relative bg-gradient-to-br from-neutral-900 to-neutral-800 border border-white/5 flex items-center justify-center">
-          {record.previewB ? (
+          {visible && record.previewB ? (
             <img 
               src={record.previewB} 
               alt="B" 

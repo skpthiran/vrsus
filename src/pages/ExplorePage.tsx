@@ -22,7 +22,7 @@ export function ExplorePage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 6;
 
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
