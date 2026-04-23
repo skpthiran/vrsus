@@ -5,14 +5,46 @@ import { Button } from '../components/ui/button';
 import { getHistory, deleteFromHistory, clearHistory } from '../lib/history';
 import { DuelRecord } from '../types/history';
 import { cn } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
+import { getUserDuels } from '../lib/duels';
 
 export function HistoryPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [history, setHistory] = useState<DuelRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setHistory(getHistory());
-  }, []);
+    async function load() {
+      setLoading(true);
+      if (user) {
+        try {
+          const duels = await getUserDuels(user.id);
+          // map Supabase shape to DuelRecord shape
+          setHistory(duels.map(d => ({
+            id: d.id,
+            createdAt: d.created_at,
+            mode: d.mode,
+            winner: d.winner,
+            margin: d.margin,
+            summary: d.summary,
+            previewA: d.image_a_url,
+            previewB: d.image_b_url,
+            scores: d.scores,
+            reasons_for_win: d.reasons_for_win,
+            weaknesses_of_loser: d.weaknesses_of_loser,
+          })));
+        } catch (error) {
+          console.error("Failed to load DB history:", error);
+          setHistory(getHistory());
+        }
+      } else {
+        setHistory(getHistory());
+      }
+      setLoading(false);
+    }
+    load();
+  }, [user]);
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -47,6 +79,12 @@ export function HistoryPage() {
     sessionStorage.setItem('vrsus_previews', JSON.stringify(previews));
     navigate('/duel/results');
   };
+
+  if (loading) return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="flex-1 container mx-auto px-4 max-w-6xl py-12">

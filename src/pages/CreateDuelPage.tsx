@@ -8,6 +8,8 @@ import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
 import { saveToHistory } from '../lib/history';
 import { DuelRecord } from '../types/history';
+import { useAuth } from '../contexts/AuthContext';
+import { saveDuelToSupabase } from '../lib/duels';
 
 interface PhotoSlot {
   preview: string | null;
@@ -19,6 +21,7 @@ const initialSlot: PhotoSlot = { preview: null, base64: null, file: null };
 
 export function CreateDuelPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [slotA, setSlotA] = useState<PhotoSlot>(initialSlot);
   const [slotB, setSlotB] = useState<PhotoSlot>(initialSlot);
   const [mode, setMode] = useState('general');
@@ -96,6 +99,10 @@ export function CreateDuelPage() {
       };
 
       saveToHistory(record);
+      
+      if (user) {
+        await saveDuelToSupabase(record, user.id);
+      }
       
       sessionStorage.setItem('vrsus_result', JSON.stringify(result));
       sessionStorage.setItem('vrsus_previews', JSON.stringify({

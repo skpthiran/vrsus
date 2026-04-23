@@ -5,10 +5,44 @@ import { Button } from '../components/ui/button';
 import { getHistory } from '../lib/history';
 import { cn } from '../lib/utils';
 import { DuelRecord } from '../types/history';
+import { useAuth } from '../contexts/AuthContext';
+import { getUserDuels } from '../lib/duels';
+import { useEffect, useState } from 'react';
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const history = useMemo(() => getHistory(), []);
+  const { user } = useAuth();
+  const [history, setHistory] = useState<DuelRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      if (user) {
+        try {
+          const duels = await getUserDuels(user.id);
+          setHistory(duels.map(d => ({
+            id: d.id,
+            createdAt: d.created_at,
+            mode: d.mode,
+            winner: d.winner,
+            margin: d.margin,
+            summary: d.summary,
+            previewA: d.image_a_url,
+            previewB: d.image_b_url,
+            scores: d.scores,
+            reasons_for_win: d.reasons_for_win,
+            weaknesses_of_loser: d.weaknesses_of_loser,
+          })));
+        } catch {
+          setHistory(getHistory());
+        }
+      } else {
+        setHistory(getHistory());
+      }
+      setLoading(false);
+    }
+    load();
+  }, [user]);
   
   const stats = useMemo(() => {
     const totalDuels = history.length;
@@ -78,13 +112,13 @@ export function ProfilePage() {
               "w-24 h-24 rounded-full bg-gradient-to-tr from-accent to-blue-500 flex items-center justify-center mb-6 relative",
               stats.totalDuels > 0 && "ring-4 ring-winner ring-offset-4 ring-offset-background"
             )}>
-              <span className="text-3xl font-display font-bold text-white">JD</span>
+              <span className="text-3xl font-display font-bold text-white uppercase">{user?.email?.[0] || 'U'}</span>
             </div>
             
-            <h1 className="text-2xl font-display font-bold mb-1">Jordan Davis</h1>
+            <h1 className="text-2xl font-display font-bold mb-1">{user?.email?.split('@')[0] || 'Guest'}</h1>
             <div className="flex items-center gap-1.5 text-accent text-sm font-bold uppercase tracking-wider mb-6">
               <Shield size={14} fill="currentColor" />
-              Verified VRSUS Member
+              {user ? 'Verified VRSUS Member' : 'Anonymous Explorer'}
             </div>
 
             <Button 
