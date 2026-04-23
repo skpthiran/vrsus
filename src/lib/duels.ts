@@ -59,13 +59,26 @@ export async function getPublicDuels(limit = 20) {
 export async function getUserDuels(userId: string, limit = 20) {
   const { data, error } = await supabase
     .from('duels')
-    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, image_a_url, image_b_url')
+    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, image_a_url, image_b_url, is_public')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
   return data || [];
+}
+
+export async function toggleDuelPrivacy(duelId: string, isPublic: boolean) {
+  const { error } = await supabase
+    .from('duels')
+    .update({ is_public: isPublic })
+    .eq('id', duelId);
+
+  if (error) {
+    console.error('toggleDuelPrivacy error:', error);
+    return false;
+  }
+  return true;
 }
 
 export async function deleteDuel(duelId: string) {

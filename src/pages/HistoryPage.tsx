@@ -6,8 +6,9 @@ import { getHistory, deleteFromHistory, clearHistory } from '../lib/history';
 import { DuelRecord } from '../types/history';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserDuels, deleteDuel } from '../lib/duels';
+import { getUserDuels, deleteDuel, toggleDuelPrivacy } from '../lib/duels';
 import { supabase } from '../lib/supabase';
+import { Globe, Lock, Share2 } from 'lucide-react';
 
 export function HistoryPage() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export function HistoryPage() {
             reasons_for_win: d.reasons_for_win,
             weaknesses_of_loser: d.weaknesses_of_loser,
             verdict: d.verdict,
+            isPublic: d.is_public,
           })));
         } catch (error) {
           console.error("Failed to load DB history:", error);
@@ -84,6 +86,22 @@ export function HistoryPage() {
 
     clearHistory();
     setHistory([]);
+  };
+  
+  const handleTogglePrivacy = async (e: React.MouseEvent, id: string, currentStatus: boolean) => {
+    e.stopPropagation();
+    const newStatus = !currentStatus;
+    
+    // Optimistic update
+    setHistory(prev => prev.map(r => r.id === id ? { ...r, isPublic: newStatus } : r));
+    
+    if (user) {
+      const success = await toggleDuelPrivacy(id, newStatus);
+      if (!success) {
+        // Rollback
+        setHistory(prev => prev.map(r => r.id === id ? { ...r, isPublic: currentStatus } : r));
+      }
+    }
   };
 
   const handleViewResult = (record: DuelRecord) => {
@@ -144,6 +162,7 @@ export function HistoryPage() {
               key={record.id} 
               record={record} 
               onDelete={handleDelete} 
+              onTogglePrivacy={handleTogglePrivacy}
               onClick={() => handleViewResult(record)} 
             />
           ))}
@@ -153,7 +172,12 @@ export function HistoryPage() {
   );
 }
 
-function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete: (e: React.MouseEvent, id: string) => void, onClick: () => void }) {
+function DuelCard({ record, onDelete, onTogglePrivacy, onClick }: { 
+  record: DuelRecord, 
+  onDelete: (e: React.MouseEvent, id: string) => void, 
+  onTogglePrivacy: (e: React.MouseEvent, id: string, current: boolean) => void,
+  onClick: () => void 
+}) {
   const winnerLetter = record.winner;
   const loserLetter = winnerLetter === 'A' ? 'B' : 'A';
   const winnerScore = record.scores[winnerLetter].total;
@@ -170,20 +194,44 @@ function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete:
       onClick={onClick}
       className="group bg-surface hover:bg-surface-hover border border-border hover:border-neutral-700 rounded-3xl p-4 transition-all duration-300 cursor-pointer flex flex-col gap-4 relative"
     >
-      <button 
-        onClick={(e) => onDelete(e, record.id)}
-        className="absolute top-6 right-6 p-2 bg-black/60 backdrop-blur-md rounded-full text-neutral-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
-      >
-        <Trash2 size={18} />
-      </button>
+      <div className="absolute top-6 right-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all z-10">
+        <button 
+          onClick={(e) => onTogglePrivacy(e, record.id, !!record.isPublic)}
+          className={cn(
+            "p-2 backdrop-blur-md rounded-full transition-all border",
+            record.isPublic 
+              ? "bg-accent/20 border-accent/30 text-accent" 
+              : "bg-black/60 border-white/10 text-neutral-400"
+          )}
+          title={record.isPublic ? "Public - Visible in Explore" : "Private - Hidden from Explore"}
+        >
+          {record.isPublic ? <Globe size={16} /> : <Lock size={16} />}
+        </button>
+        <button 
+          onClick={(e) => onDelete(e, record.id)}
+          className="p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-400 hover:text-red-400 transition-all"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+
+      {/* Status indicator (always visible) */}
+      {!record.isPublic && (
+        <div className="absolute top-2 left-6 bg-black/60 backdrop-blur-md border border-white/5 px-2 py-0.5 rounded-full text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1 z-10">
+          <Lock size={10} /> Private
+        </div>
+      )}
 
       {/* Side by Side Preview */}
       <div className="grid grid-cols-2 gap-2 h-40">
-        <div className="rounded-2xl overflow-hidden relative bg-neutral-900">
+        <div className="rounded-2xl overflow-hidden relative bg-neutral-900 border border-white/5">
           <img 
             src={record.previewA} 
             alt="A" 
-            className="w-full h-full object-cover" 
+            className={cn(
+              "w-full h-full object-cover transition-opacity duration-300",
+              record.winner === 'B' ? "opacity-50" : "opacity-100"
+            )}
             loading="lazy"
             decoding="async"
           />
@@ -194,11 +242,14 @@ function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete:
             </div>
           )}
         </div>
-        <div className="rounded-2xl overflow-hidden relative bg-neutral-900">
+        <div className="rounded-2xl overflow-hidden relative bg-neutral-900 border border-white/5">
           <img 
             src={record.previewB} 
             alt="B" 
-            className="w-full h-full object-cover" 
+            className={cn(
+              "w-full h-full object-cover transition-opacity duration-300",
+              record.winner === 'A' ? "opacity-50" : "opacity-100"
+            )}
             loading="lazy"
             decoding="async"
           />
@@ -225,32 +276,41 @@ function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete:
                "font-display font-bold text-lg",
                record.winner === 'A' ? "text-blue-400" : "text-violet-400"
              )}>
-               Photo {record.winner} is the winner
+               {record.winner === 'A' ? 'Photo A' : 'Photo B'} Dominated
              </h3>
           </div>
         </div>
 
         <div className="flex items-center gap-3 bg-black/30 p-3 rounded-2xl border border-border/50">
            <div className="flex-1 flex flex-col items-center border-r border-border/50">
-             <span className="text-[10px] uppercase tracking-tighter text-neutral-500">Winner</span>
+             <span className="text-[10px] uppercase tracking-tighter text-neutral-500 font-bold">Winner</span>
              <span className="text-xl font-display font-bold text-winner">{winnerScore}</span>
            </div>
            <div className="flex-1 flex flex-col items-center">
-             <span className="text-[10px] uppercase tracking-tighter text-neutral-500">Margin</span>
+             <span className="text-[10px] uppercase tracking-tighter text-neutral-500 font-bold">Margin</span>
              <span className="text-xl font-display font-bold">+{record.margin}</span>
            </div>
            <div className="flex-1 flex flex-col items-center border-l border-border/50">
-             <span className="text-[10px] uppercase tracking-tighter text-neutral-500">Loser</span>
+             <span className="text-[10px] uppercase tracking-tighter text-neutral-500 font-bold">Loser</span>
              <span className="text-xl font-display font-bold text-neutral-400">{loserScore}</span>
            </div>
         </div>
 
-        <p className="text-sm text-neutral-400 line-clamp-2 italic">
+        <p className="text-sm text-neutral-400 line-clamp-2 italic leading-relaxed">
           "{record.verdict || record.summary}"
         </p>
 
-        <div className="flex items-center justify-center pt-2 text-xs font-bold text-neutral-500 group-hover:text-foreground transition-colors uppercase tracking-widest gap-1">
-          Open Full Results <ArrowRight size={14} />
+        <div className="flex items-center justify-between pt-2 border-t border-white/5">
+          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
+             {record.isPublic ? (
+               <span className="flex items-center gap-1 text-accent"><Globe size={10} /> Public Feed</span>
+             ) : (
+               <span className="flex items-center gap-1"><Lock size={10} /> Private Only</span>
+             )}
+          </div>
+          <div className="flex items-center gap-1 text-[10px] font-bold text-accent uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+            Details <ArrowRight size={12} />
+          </div>
         </div>
       </div>
     </div>
