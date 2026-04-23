@@ -13,12 +13,14 @@ const NAV_ITEMS = [
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const isLanding = location.pathname === '/';
   const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Top nav — desktop only */}
-      <header className="hidden md:flex sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
+      {!isLanding && (
+        <header className="hidden md:flex sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-7xl">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
@@ -64,6 +66,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile top bar */}
       <header className="md:hidden sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-xl">
@@ -87,13 +90,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main content — add bottom padding on mobile for nav bar */}
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className={cn("flex-1", !isLanding && "pb-20 md:pb-0")}>
         {children}
       </main>
 
       {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border">
-        <div className="grid grid-cols-4 h-16">
+      {!isLanding && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border">
+          <div className="grid grid-cols-4 h-16">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
             const active = location.pathname.startsWith(item.path);
@@ -112,8 +116,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-        </div>
-      </nav>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
