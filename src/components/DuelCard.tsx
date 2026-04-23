@@ -82,9 +82,9 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
     <div className="bg-surface border border-border rounded-[2rem] overflow-hidden">
       {/* Photo grid */}
       <div
-        className={cn("grid grid-cols-2 relative", (duel.isOwn && onCardClick) && "cursor-pointer")}
+        className={cn("grid grid-cols-2 relative", (onCardClick) && "cursor-pointer")}
         style={{ aspectRatio: '4/3' }}
-        onClick={() => onCardClick && duel.isOwn && onCardClick(duel)}
+        onClick={() => onCardClick && onCardClick(duel)}
       >
         {/* Photo A */}
         <div className="relative overflow-hidden">

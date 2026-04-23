@@ -92,7 +92,7 @@ export function AnalyzingPage() {
 
         // Give the animation a tiny bit more time if it was too fast
         setTimeout(() => {
-          navigate('/duel/results');
+          navigate(`/results/${dbId}`);
         }, 800);
       })
       .catch(err => {

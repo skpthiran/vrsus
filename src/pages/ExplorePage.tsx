@@ -60,8 +60,7 @@ export function ExplorePage() {
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
   const handleCardClick = (duel: any) => {
-    // If it's the user's own duel, they can click it for details
-    // For now, no-op or navigate to result page if we had a shareable URL
+    navigate(`/results/${duel.id}`);
   };
 
   return (
@@ -138,9 +137,12 @@ export function ExplorePage() {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-white truncate">
-                        {entry.profiles?.display_name || 'Anonymous'}
-                      </div>
+                      <Link 
+                        to={`/results/${entry.id}`}
+                        className="group flex-1"
+                        onClick={() => sessionStorage.setItem('vrsus_last_result', JSON.stringify(entry))}
+                      >{entry.profiles?.display_name || 'Anonymous'}
+                      </Link>
                       <div className="text-xs text-neutral-500 font-medium">
                         {entry.mode} • {new Date(entry.created_at).toLocaleDateString()}
                       </div>

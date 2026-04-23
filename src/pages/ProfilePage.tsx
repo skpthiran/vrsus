@@ -110,19 +110,18 @@ export function ProfilePage() {
   }, [history]);
 
   const handleViewDuel = (record: any) => {
-    sessionStorage.setItem('vrsus_result', JSON.stringify({
+    sessionStorage.setItem('vrsus_last_result', JSON.stringify({
+      id: record.id,
       winner: record.winner,
       margin: record.margin,
       scores: record.scores,
       reasons_for_win: record.reasons_for_win,
       weaknesses_of_loser: record.weaknesses_of_loser,
       summary: record.summary,
-    }));
-    sessionStorage.setItem('vrsus_previews', JSON.stringify({
       previewA: record.previewA,
       previewB: record.previewB,
     }));
-    navigate('/duel/results');
+    navigate(`/results/${record.id}`);
   };
 
   return (

@@ -279,12 +279,15 @@ Return ONLY:
       judgment = JSON.parse(extractJSON(raw2));
     } catch (err: any) {
       log('Stage 2 PARSE FAILED: ' + err.message);
-      const totalA = Object.values(visualScores.A).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) as number;
-      const totalB = Object.values(visualScores.B).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) as number;
+      const totalA = Math.round(Object.values(visualScores.A).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) * (100 / 60));
+      const totalB = Math.round(Object.values(visualScores.B).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) * (100 / 60));
       const aWins = totalA >= totalB;
       judgment = {
         winner: aWins ? 'A' : 'B',
-        scores: visualScores,
+        scores: {
+          A: { ...visualScores.A, total: totalA },
+          B: { ...visualScores.B, total: totalB },
+        },
         margin: Math.abs(totalA - totalB),
         winning_edge: aWins ? 'Superior facial structure and bone definition.' : 'Better overall presentation and grooming.',
         verdict: 'The winner displays a significantly more refined aesthetic and better physical symmetry.',

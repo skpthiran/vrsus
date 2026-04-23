@@ -1,22 +1,70 @@
 import React, { useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trophy, Share2, Download, Copy, RefreshCw, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { Trophy, Share2, Download, Copy, RefreshCw, CheckCircle2, ArrowUpRight, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
+import { getDuelById } from '../lib/duels';
 
 export function ResultsPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const shareCardRef = useRef<HTMLDivElement>(null);
   
-  const result = JSON.parse(sessionStorage.getItem('vrsus_last_result') || 'null');
+  const [result, setResult] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  useEffect(() => {
+    async function loadResult() {
+      setLoading(true);
+      
+      // 1. Try session storage first (fastest)
+      const cached = sessionStorage.getItem('vrsus_last_result');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // If we have an ID in URL, it must match the cached one
+        if (!id || parsed.id === id) {
+          setResult(parsed);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. If ID in URL, fetch from Supabase
+      if (id) {
+        try {
+          const data = await getDuelById(id);
+          if (data) {
+            setResult({
+              ...data,
+              previewA: data.image_a_url,
+              previewB: data.image_b_url,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to fetch duel:', err);
+        }
+      }
+      
+      setLoading(false);
+    }
+
+    loadResult();
+  }, [id]);
+
+  if (loading) return (
+    <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <Loader2 className="w-8 h-8 text-accent animate-spin mb-4" />
+      <p className="text-neutral-400">Loading result...</p>
+    </div>
+  );
 
   if (!result || !result.scores || !result.winner) return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8">
-      <p className="text-neutral-400 mb-4">Duel result not found.</p>
-      <Link to="/history">
-        <Button variant="outline">Back to History</Button>
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+      <p className="text-neutral-400 mb-4 text-lg">Duel result not found.</p>
+      <Link to="/duel">
+        <Button variant="default" className="bg-accent hover:bg-accent-hover text-white px-8">Start New Duel</Button>
       </Link>
     </div>
   );
@@ -27,7 +75,7 @@ export function ResultsPage() {
   const winnerPreview = result.winner === 'A' ? result.previewA : result.previewB;
   const loserPreview = result.winner === 'A' ? result.previewB : result.previewA;
 
-  const categoryNames = ['face_card', 'body', 'style', 'glow', 'expression', 'aura'];
+  const categoryNames = result.scores?.A ? Object.keys(result.scores.A).filter(k => k !== 'total' && k !== 'observation') : ['face_card', 'body', 'style', 'glow', 'expression', 'aura'];
   const categoryLabels: Record<string, string> = {
     face_card: '😮 Face Card',
     body: '💪 Body',
@@ -35,6 +83,11 @@ export function ResultsPage() {
     glow: '✨ Glow',
     expression: '😄 Expression',
     aura: '⚡ Aura',
+    confidence: '🔥 Confidence',
+    lighting: '💡 Lighting',
+    grooming: '🪒 Grooming',
+    composition: '📸 Composition',
+    presence: '👑 Presence'
   };
 
   const handleDownload = async () => {
@@ -46,9 +99,10 @@ export function ResultsPage() {
         scale: 1,
         useCORS: true,
         backgroundColor: '#030303',
+        logging: false,
       });
       const link = document.createElement('a');
-      link.download = `vrsus-duel-${Date.now()}.png`;
+      link.download = `vrsus-duel-${result.id || Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (err) {
@@ -57,7 +111,8 @@ export function ResultsPage() {
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const shareUrl = `${window.location.origin}/results/${result.id || ''}`;
+    navigator.clipboard.writeText(shareUrl);
     alert('Link copied to clipboard!');
   };
 

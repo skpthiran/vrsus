@@ -132,6 +132,7 @@ export function HistoryPage() {
 
   const handleViewResult = (record: DuelRecord) => {
     sessionStorage.setItem('vrsus_last_result', JSON.stringify({
+      id: record.id,
       winner: record.winner,
       margin: record.margin,
       scores: record.scores,
@@ -142,7 +143,7 @@ export function HistoryPage() {
       previewB: record.previewB,
       verdict: record.verdict,
     }));
-    navigate('/duel/results');
+    navigate(`/results/${record.id}`);
   };
 
   return (

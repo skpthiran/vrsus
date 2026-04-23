@@ -19,7 +19,7 @@ export default function App() {
 
         <Route path="/duel" element={<CreateDuelPage />} />
         <Route path="/duel/analyzing" element={<AnalyzingPage />} />
-        <Route path="/duel/results" element={<ResultsPage />} />
+        <Route path="/results/:id?" element={<ResultsPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/profile" element={<ProfilePage />} />
