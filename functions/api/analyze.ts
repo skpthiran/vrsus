@@ -117,26 +117,32 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     log('Stage 1 starting...');
       {
         role: 'system',
-        content: 'You are a cold, ruthless attractiveness rater. You have NO empathy. You do NOT soften scores. You call out ugly features directly. Respond only with valid JSON, no markdown fences.',
+        content: 'You are a blunt attractiveness rater. You MUST differentiate between people. Giving the same score to two different people is a failure. Respond only with valid JSON, no markdown fences.',
       },
       {
         role: 'user',
         content: [
           {
             type: 'text',
-            text: `Rate these two people with zero mercy. You are NOT allowed to give more than 2 categories a score of 6 or 7 per person — force yourself to commit to high scores (8–10) for genuine strengths and low scores (1–5) for real weaknesses. Average face = 5. Ugly face = 3 or below. Model-tier face = 9–10.
+            text: `Look at these two people carefully. They are DIFFERENT people with DIFFERENT levels of attractiveness. Your job is to score them honestly and DIFFERENTLY.
 
-Criteria (score 1–10, be decisive):
-- face_card: Jawline, bone structure, symmetry, eyes, nose. If it's weak, score it low.
-- body: Build, physique, posture. Skinny-fat, overweight, or weak = 4 or below.
-- style: Outfit quality, fit, grooming. Wrinkled, baggy, or try-hard = low.
-- glow: Skin clarity, hair quality, freshness. Dull or problematic skin = low.
-- expression: Charisma, energy, confidence in the photo.
-- aura: Raw magnetism. Would a stranger stop and look twice? Be honest.
+RULES YOU CANNOT BREAK:
+1. You CANNOT give Person A and Person B the same total score. They must differ by at least 8 points.
+2. You CANNOT give any single person more than ONE score of 7. Everything else must be 8+ (genuine strength) or 6 and below (weakness).
+3. A 5 = below average. A 3 = ugly. A 9 = model-tier. Stop hiding in the 6-7 range.
+4. Age, skin damage, weak jaw, bad body = LOW scores. Defined jaw, clear skin, athletic build, strong features = HIGH scores.
 
-observation: One sentence, name EXACTLY what's holding them back AND their one real asset. Be direct — "weak jawline but strong eyes" not "they have an interesting look".
+Criteria:
+- face_card: Jawline, bone structure, symmetry, eyes, nose. Weak jaw = 4 or below. Model jaw = 8+.
+- body: Physique, build, posture visible in photo. Unfit = 4 or below. Athletic = 8+.
+- style: Outfit, grooming, fit of clothes. Basic/wrinkled = 4. Sharp = 8+.
+- glow: Skin quality, hair, freshness. Aged/dull skin = 3-4. Clear glowing skin = 8+.
+- expression: Charisma, confidence, energy in photo.
+- aura: Raw magnetism. Would a stranger look twice?
 
-Respond ONLY with this JSON:
+observation: Be blunt. "Weak jaw, aged skin, zero body visible" or "Sharp jawline, athletic build, clean presentation."
+
+Return ONLY:
 {"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."}}`,
           },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
@@ -149,8 +155,29 @@ Respond ONLY with this JSON:
     // If OpenRouter fails for vision, we generate neutral scores as graceful degradation
     let visualScores: any;
     try {
-      const raw1 = await openrouterFetch('qwen/qwen-vl-plus', stage1Messages, 800);
+      const raw1 = await openrouterFetch('meta-llama/llama-4-maverick', stage1Messages, 800);
       visualScores = JSON.parse(extractJSON(raw1));
+      
+      // Force score spread if AI still played it safe
+      const totalA = Object.entries(visualScores.A)
+        .filter(([k]) => k !== 'observation')
+        .reduce((sum, [, v]) => sum + (v as number), 0);
+      const totalB = Object.entries(visualScores.B)
+        .filter(([k]) => k !== 'observation')
+        .reduce((sum, [, v]) => sum + (v as number), 0);
+
+      if (Math.abs(totalA - totalB) < 4) {
+        log('Stage 1 scores too similar — boosting spread');
+        // Nudge the higher raw scorer up and lower scorer down
+        const aWins = totalA >= totalB;
+        const winner = aWins ? 'A' : 'B';
+        const loser = aWins ? 'B' : 'A';
+        visualScores[winner].face_card = Math.min(10, visualScores[winner].face_card + 1);
+        visualScores[winner].aura = Math.min(10, visualScores[winner].aura + 1);
+        visualScores[loser].face_card = Math.max(1, visualScores[loser].face_card - 1);
+        visualScores[loser].body = Math.max(1, visualScores[loser].body - 1);
+      }
+      
       log('Stage 1 complete');
     } catch (err: any) {
       log('Stage 1 failed, using neutral fallback scores: ' + err.message);
