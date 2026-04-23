@@ -7,37 +7,47 @@ import { DuelCard } from '@/components/DuelCard';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: Grid },
+  { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
   { id: 'fashion', label: 'Fashion', icon: Layers },
   { id: 'food', label: 'Food', icon: Zap },
-  { id: 'tech', label: 'Gadgets', icon: Search },
 ];
 
 export function ExplorePage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('all');
   const [dbDuels, setDbDuels] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    getPublicDuels().then(duels => {
-      console.log('📡 Public duels from Supabase:', duels.length, duels);
-      setDbDuels(duels.map(d => ({
-        id: d.id,
-        mode: d.mode.charAt(0).toUpperCase() + d.mode.slice(1),
-        winner: d.winner,
-        aScore: d.score_a,
-        bScore: d.score_b,
-        imgA: d.image_a_url,
-        imgB: d.image_b_url,
-        reason: d.summary,
-        isOwn: false,
-      })));
-      setLoading(false);
-    }).catch(err => {
-      console.error('❌ Failed to load public duels:', err);
-      setLoading(false);
-    });
+    async function init() {
+      setLoading(true);
+      try {
+        const [duels, leaderboardData] = await Promise.all([
+          getPublicDuels(),
+          import('@/lib/duels').then(m => m.getWeeklyLeaderboard())
+        ]);
+
+        setDbDuels(duels.map(d => ({
+          id: d.id,
+          mode: d.mode.charAt(0).toUpperCase() + d.mode.slice(1),
+          winner: d.winner,
+          aScore: d.score_a,
+          bScore: d.score_b,
+          imgA: d.image_a_url,
+          imgB: d.image_b_url,
+          reason: d.summary,
+          isOwn: false,
+        })));
+        
+        setLeaderboard(leaderboardData);
+      } catch (err) {
+        console.error('❌ Failed to load explore data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    init();
   }, []);
 
   const handleCardClick = (duel: any) => {
@@ -84,12 +94,58 @@ export function ExplorePage() {
         })}
       </div>
 
-      {/* Main Feed */}
+      {/* Main Feed / Leaderboard */}
       <div className="space-y-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-neutral-500 gap-4">
             <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
             <p className="font-bold animate-pulse">Scanning the multiverse...</p>
+          </div>
+        ) : activeCategory === 'leaderboard' ? (
+          <div className="bg-surface border border-border rounded-[2rem] overflow-hidden">
+            <div className="p-6 border-b border-border bg-accent/5">
+              <h2 className="text-xl font-display font-black">WEEKLY STARS</h2>
+              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">Top scores from the last 7 days</p>
+            </div>
+            
+            <div className="divide-y divide-border">
+              {leaderboard.length === 0 ? (
+                <div className="p-10 text-center text-neutral-500">
+                  No high scores this week yet.
+                </div>
+              ) : (
+                leaderboard.map((entry, index) => (
+                  <div key={entry.id} className="flex items-center gap-4 p-5 hover:bg-white/[0.02] transition-colors">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center font-black italic",
+                      index === 0 ? "bg-yellow-400 text-black" :
+                      index === 1 ? "bg-neutral-300 text-black" :
+                      index === 2 ? "bg-orange-400 text-black" : "text-neutral-500"
+                    )}>
+                      {index + 1}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-white truncate">
+                        {entry.profiles?.display_name || 'Anonymous'}
+                      </div>
+                      <div className="text-xs text-neutral-500 font-medium">
+                        {entry.mode} • {new Date(entry.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="text-xl font-display font-black text-accent leading-none">
+                        {entry.max_score}
+                      </div>
+                      <div className="text-[10px] text-neutral-600 font-bold uppercase tracking-tighter">
+                        SCORE
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         ) : dbDuels.length === 0 ? (
           <div className="text-center py-20 bg-surface rounded-[2rem] border border-dashed border-neutral-800">

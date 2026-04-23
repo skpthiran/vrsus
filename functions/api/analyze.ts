@@ -125,7 +125,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         content: [
           {
             type: 'text',
-            text: `You are analyzing two photos for a "${mode}" context. Score each 1-10 on six criteria. You MUST respond with ONLY a JSON object, no other text.\n\nFormat:\n{"A":{"confidence":7,"lighting":8,"expression":6,"grooming":7,"composition":8,"presence":7,"observation":"Description of photo A in one sentence."},"B":{"confidence":6,"lighting":7,"expression":8,"grooming":6,"composition":7,"presence":8,"observation":"Description of photo B in one sentence."}}`,
+            text: `You are a brutally honest attractiveness analyst judging two photos for a "${mode}" context. Score each person 1-10 on these six criteria. Be real — don't give everyone 7s. You MUST respond with ONLY a JSON object, no other text.
+
+Criteria:
+- face_card: Facial attractiveness — bone structure, symmetry, features, jawline, eyes
+- body: Physique and body aesthetics — build, posture, proportions
+- style: Outfit, fashion sense, grooming, overall presentation
+- glow: Skin quality, hair, radiance, how healthy and fresh they look
+- expression: Energy, smile, vibe, charisma — how alive they look in the photo
+- aura: Overall X-factor and magnetism — star quality, would you look twice?
+
+Format:
+{"A":{"face_card":7,"body":8,"style":6,"glow":7,"expression":8,"aura":7,"observation":"One sentence describing person A's overall look and strongest feature."},"B":{"face_card":6,"body":7,"style":8,"glow":6,"expression":7,"aura":8,"observation":"One sentence describing person B's overall look and strongest feature."}}`,
           },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
@@ -143,8 +154,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     } catch (err: any) {
       log('Stage 1 failed, using neutral fallback scores: ' + err.message);
       visualScores = {
-        A: { confidence: 7, lighting: 7, expression: 7, grooming: 7, composition: 7, presence: 7, observation: 'Photo A analyzed.' },
-        B: { confidence: 7, lighting: 7, expression: 7, grooming: 7, composition: 7, presence: 7, observation: 'Photo B analyzed.' },
+        A: { face_card: 7, body: 7, style: 7, glow: 7, expression: 7, aura: 7, observation: 'Photo A analyzed.' },
+        B: { face_card: 7, body: 7, style: 7, glow: 7, expression: 7, aura: 7, observation: 'Photo B analyzed.' },
       };
     }
 
@@ -157,7 +168,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       },
       {
         role: 'user',
-        content: `Given these visual scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0},"B":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0}},"margin":0,"winning_edge":"One sentence on the deciding factor.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge should reference face card, body, style, glow, expression or aura specifically\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sentence naming the exact deciding factor — face card, body, glow, etc.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
     ];
 
@@ -180,11 +191,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const stage3Messages = [
       {
         role: 'system',
-        content: 'You are a friendly photo coach. Be encouraging but actionable. Respond only with valid JSON, no markdown fences.',
+        content: 'You are a confident, direct beauty and style coach. Give real, actionable advice. Respond only with valid JSON, no markdown fences.',
       },
       {
         role: 'user',
-        content: `The losing photo (Photo ${loser}) had these scores: ${JSON.stringify(loserScores)}\nObservation: "${loserScores.observation}"\nMode: "${mode}"\n\nWrite 3 specific, actionable improvement tips. Return ONLY this JSON:\n{"weaknesses_of_loser":["tip 1","tip 2","tip 3"]}`,
+        content: `The losing photo (Photo ${loser}) had these scores: ${JSON.stringify(loserScores)}\nObservation: "${loserScores.observation}"\nMode: "${mode}"\n\nGive 3 specific, actionable tips to improve their attractiveness score — could be about face card angles, body posture, style choices, skin/hair glow, expression energy, or overall aura. Be direct and helpful. Return ONLY this JSON:\n{"weaknesses_of_loser":["tip 1","tip 2","tip 3"]}`,
       },
     ];
 

@@ -26,7 +26,15 @@ export function ResultsPage() {
   const winnerPreview = result.winner === 'A' ? result.previewA : result.previewB;
   const loserPreview = result.winner === 'A' ? result.previewB : result.previewA;
 
-  const categoryNames = ['confidence', 'lighting', 'expression', 'grooming', 'composition', 'presence'];
+  const categoryNames = ['face_card', 'body', 'style', 'glow', 'expression', 'aura'];
+  const categoryLabels: Record<string, string> = {
+    face_card: '😮 Face Card',
+    body: '💪 Body',
+    style: '👗 Style',
+    glow: '✨ Glow',
+    expression: '😄 Expression',
+    aura: '⚡ Aura',
+  };
 
   const handleDownload = async () => {
     if (!shareCardRef.current) return;
@@ -145,7 +153,7 @@ export function ResultsPage() {
                        <div className="flex-1">
                           <div className="flex justify-between text-[10px] md:text-xs uppercase tracking-wider font-semibold mb-2">
                              <span className="text-neutral-500">A</span>
-                             <span className="text-foreground truncate px-2 capitalize">{cat}</span>
+                             <span className="text-foreground truncate px-2 capitalize">{categoryLabels[cat] || cat}</span>
                              <span className="text-winner">B</span>
                           </div>
                           <div className="relative h-2 bg-black rounded-full overflow-hidden flex">

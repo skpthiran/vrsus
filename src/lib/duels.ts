@@ -24,6 +24,11 @@ export async function saveDuelToSupabase(record: DuelRecord, userId: string): Pr
       .single();
 
     if (error) throw error;
+
+    // Update streak
+    const winnerScore = Math.max(record.scores.A.total, record.scores.B.total);
+    await updateStreak(userId, winnerScore);
+
     return data.id;
   } catch (err) {
     console.error('Failed to save duel to Supabase:', err);
@@ -123,4 +128,53 @@ export async function addComment(duelId: string, userId: string, content: string
 
 export async function deleteComment(commentId: string) {
   await supabase.from('comments').delete().eq('id', commentId);
+}
+
+export async function updateStreak(userId: string, winnerScore: number) {
+  // Fetch current profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('current_streak, best_streak, total_duels')
+    .eq('id', userId)
+    .single();
+
+  const isHighScore = winnerScore >= 70;
+  const currentStreak = isHighScore ? (profile?.current_streak || 0) + 1 : 0;
+  const bestStreak = Math.max(currentStreak, profile?.best_streak || 0);
+  const totalDuels = (profile?.total_duels || 0) + 1;
+
+  await supabase
+    .from('profiles')
+    .update({ current_streak: currentStreak, best_streak: bestStreak, total_duels: totalDuels })
+    .eq('id', userId);
+
+  return { currentStreak, bestStreak };
+}
+
+export async function getWeeklyLeaderboard() {
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from('duels')
+    .select('user_id, score_a, score_b, profiles(display_name)')
+    .eq('is_public', true)
+    .gte('created_at', oneWeekAgo);
+
+  if (error) throw error;
+
+  // Aggregate per user
+  const map: Record<string, { display_name: string; best_score: number; total_duels: number }> = {};
+  for (const d of data || []) {
+    const uid = d.user_id;
+    const best = Math.max(d.score_a || 0, d.score_b || 0);
+    const name = (d.profiles as any)?.display_name || 'Anonymous';
+    if (!map[uid]) map[uid] = { display_name: name, best_score: 0, total_duels: 0 };
+    if (best > map[uid].best_score) map[uid].best_score = best;
+    map[uid].total_duels++;
+  }
+
+  return Object.entries(map)
+    .map(([uid, v]) => ({ user_id: uid, ...v }))
+    .sort((a, b) => b.best_score - a.best_score)
+    .slice(0, 10);
 }

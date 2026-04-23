@@ -12,18 +12,22 @@ export function ProfilePage() {
   const { user, signOut } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
   const [displayName, setDisplayName] = useState('');
+  const [streak, setStreak] = useState({ current: 0, best: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       if (user) {
-        // Load profile info
         const { data: profile } = await supabase
           .from('profiles')
-          .select('display_name')
+          .select('display_name, current_streak, best_streak')
           .eq('id', user.id)
           .single();
         setDisplayName(profile?.display_name || user.email?.split('@')[0] || 'User');
+        setStreak({
+          current: profile?.current_streak || 0,
+          best: profile?.best_streak || 0,
+        });
 
         // Load duels
         try {
@@ -139,13 +143,38 @@ export function ProfilePage() {
         </Link>
       </div>
 
+      {/* Streak Banner */}
+      {streak.current > 0 && (
+        <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/30 rounded-2xl px-5 py-4">
+          <span className="text-3xl">🔥</span>
+          <div>
+            <div className="font-bold text-orange-400 text-lg">
+              {streak.current} duel streak!
+            </div>
+            <div className="text-xs text-neutral-400">
+              Keep uploading high-quality photos to extend it. Best ever: {streak.best}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {streak.current === 0 && streak.best > 0 && (
+        <div className="flex items-center gap-3 bg-surface border border-border rounded-2xl px-5 py-4">
+          <span className="text-2xl">💀</span>
+          <div>
+            <div className="font-semibold text-neutral-300">Streak broken</div>
+            <div className="text-xs text-neutral-500">Your best streak was {streak.best}. Upload a high-scoring photo to start again.</div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: 'Total Duels', value: stats.total, icon: <Zap size={18} />, color: 'text-accent' },
           { label: 'Avg Score', value: stats.avgScore || '—', icon: <Star size={18} />, color: 'text-yellow-400' },
           { label: 'Best Score', value: stats.bestScore || '—', icon: <Trophy size={18} />, color: 'text-green-400' },
-          { label: 'Fav Mode', value: stats.favoriteMode, icon: <Calendar size={18} />, color: 'text-blue-400' },
+          { label: 'Best Streak', value: streak.best > 0 ? `${streak.best} 🔥` : '—', icon: <Zap size={18} />, color: 'text-orange-400' },
         ].map((stat, i) => (
           <div key={i} className="bg-surface border border-border rounded-2xl p-4">
             <div className={cn('mb-2', stat.color)}>{stat.icon}</div>
