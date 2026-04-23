@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Flame, Clock, Trophy, MapPin, Grid, Layers, Zap, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';

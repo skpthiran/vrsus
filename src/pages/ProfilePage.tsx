@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trophy, Star, Zap, Calendar, Settings, Ghost, ArrowRight, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';

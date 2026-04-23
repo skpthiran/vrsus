@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Trophy, Trash2, Calendar, Zap, ArrowRight, Ghost } from 'lucide-react';
 import { Button } from '../components/ui/button';
