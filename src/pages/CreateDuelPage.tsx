@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { UploadCloud, Image as ImageIcon, X, Zap, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
+import { saveToHistory } from '../lib/history';
+import { DuelRecord } from '../types/history';
 
 interface PhotoSlot {
   preview: string | null;
@@ -60,6 +62,8 @@ export function CreateDuelPage() {
     setError(null);
 
     try {
+      if (!slotA.file || !slotB.file) throw new Error('Files missing');
+
       const response = await fetch('http://localhost:3001/api/analyze', {
         method: 'POST',
         headers: {
@@ -77,6 +81,34 @@ export function CreateDuelPage() {
       }
 
       const result = await response.json();
+      
+      // Convert files to full data URLs for history (persistence)
+      const toDataURL = (file: File): Promise<string> => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      };
+
+      const dataUrlA = await toDataURL(slotA.file);
+      const dataUrlB = await toDataURL(slotB.file);
+
+      const record: DuelRecord = {
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        mode,
+        winner: result.winner,
+        margin: result.margin,
+        summary: result.summary,
+        previewA: dataUrlA,
+        previewB: dataUrlB,
+        scores: result.scores,
+        reasons_for_win: result.reasons_for_win,
+        weaknesses_of_loser: result.weaknesses_of_loser,
+      };
+
+      saveToHistory(record);
       
       sessionStorage.setItem('vrsus_result', JSON.stringify(result));
       sessionStorage.setItem('vrsus_previews', JSON.stringify({

@@ -1,96 +1,185 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Filter, Trophy } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Trophy, Trash2, Calendar, Zap, ArrowRight, Ghost } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { getHistory, deleteFromHistory, clearHistory } from '../lib/history';
+import { DuelRecord } from '../types/history';
 import { cn } from '../lib/utils';
 
 export function HistoryPage() {
-  const mockHistory = [
-    { id: 1, date: '2 hours ago', mode: 'General', winner: 'B', aScore: 84, bScore: 96, imgA: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&fit=crop', imgB: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&fit=crop' },
-    { id: 2, date: 'Yesterday', mode: 'LinkedIn', winner: 'A', aScore: 92, bScore: 78, imgA: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&fit=crop', imgB: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&fit=crop' },
-    { id: 3, date: 'Mar 12', mode: 'Dating', winner: 'B', aScore: 65, bScore: 89, imgA: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&fit=crop', imgB: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&fit=crop' },
-    { id: 4, date: 'Mar 05', mode: 'Instagram', winner: 'A', aScore: 94, bScore: 91, imgA: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&fit=crop', imgB: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&fit=crop' },
-    { id: 5, date: 'Feb 28', mode: 'Gym', winner: 'B', aScore: 75, bScore: 98, imgA: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200&fit=crop', imgB: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&fit=crop' },
-  ];
+  const navigate = useNavigate();
+  const [history, setHistory] = useState<DuelRecord[]>([]);
+
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteFromHistory(id);
+    setHistory(getHistory());
+  };
+
+  const handleClear = () => {
+    if (window.confirm('Are you sure you want to clear all history?')) {
+      clearHistory();
+      setHistory([]);
+    }
+  };
+
+  const handleViewResult = (record: DuelRecord) => {
+    // Populate sessionStorage to match ResultsPage expectations
+    const result = {
+      winner: record.winner,
+      margin: record.margin,
+      scores: record.scores,
+      reasons_for_win: record.reasons_for_win,
+      weaknesses_of_loser: record.weaknesses_of_loser,
+      summary: record.summary
+    };
+    
+    const previews = {
+      previewA: record.previewA,
+      previewB: record.previewB
+    };
+
+    sessionStorage.setItem('vrsus_result', JSON.stringify(result));
+    sessionStorage.setItem('vrsus_previews', JSON.stringify(previews));
+    navigate('/duel/results');
+  };
 
   return (
     <div className="flex-1 container mx-auto px-4 max-w-6xl py-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
         <div>
-          <h1 className="text-4xl font-display font-bold tracking-tight mb-2">Your Duels</h1>
-          <p className="text-neutral-400">Review past results and track your photo performance.</p>
+          <h1 className="text-4xl font-display font-bold mb-2">Duel History</h1>
+          <p className="text-neutral-400">Review your past battles and AI insights.</p>
         </div>
-        
-        <div className="flex w-full md:w-auto items-center gap-3">
-           <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-              <input 
-                type="text" 
-                placeholder="Search history..." 
-                className="w-full bg-surface border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-accent/50 transition-colors"
-               />
-           </div>
-           <button className="p-2.5 bg-surface border border-border rounded-full hover:bg-surface-hover text-neutral-400">
-             <Filter size={18} />
-           </button>
+        {history.length > 0 && (
+          <Button variant="ghost" onClick={handleClear} className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-12 px-6 rounded-2xl">
+            <Trash2 size={20} className="mr-2" />
+            Clear All
+          </Button>
+        )}
+      </div>
+
+      {history.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-24 h-24 bg-surface rounded-full flex items-center justify-center mb-6 border border-border">
+            <Ghost size={48} className="text-neutral-600" />
+          </div>
+          <h2 className="text-2xl font-display font-bold mb-3">No duels yet</h2>
+          <p className="text-neutral-400 mb-8 max-w-xs mx-auto">Your photo battles will appear here once you've run your first analysis.</p>
+          <Link to="/duel">
+            <Button size="lg" className="h-14 px-8 text-lg font-bold rounded-2xl shadow-xl shadow-accent/20">
+              Start Your First Duel
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </Link>
         </div>
-      </div>
-
-      <div className="flex gap-2 mb-8 overflow-x-auto hide-scrollbar pb-2">
-         {['All', 'Dating', 'LinkedIn', 'Instagram', 'Saved'].map((tab, i) => (
-           <button 
-             key={i} 
-             className={cn(
-               "px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap",
-               i === 0 ? "bg-foreground text-background" : "bg-surface text-neutral-400 border border-border hover:text-foreground"
-             )}
-           >
-             {tab}
-           </button>
-         ))}
-      </div>
-
-      <div className="grid gap-4">
-         {mockHistory.map((duel) => (
-           <Link to="/duel/results" key={duel.id}>
-             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 bg-surface border border-border rounded-3xl p-4 hover:border-accent/30 transition-all hover:bg-surface-hover group">
-               {/* Previews */}
-               <div className="flex items-center gap-2 w-full md:w-auto">
-                 <div className={cn("relative w-20 h-28 rounded-xl overflow-hidden", duel.winner === 'A' ? "ring-2 ring-winner" : "opacity-60")}>
-                    {duel.winner === 'A' && <div className="absolute top-0 right-0 bg-winner p-0.5 rounded-bl-lg z-10"><Trophy size={10} className="text-black" /></div>}
-                    <img src={duel.imgA} alt="A" className="w-full h-full object-cover" />
-                 </div>
-                 <div className="text-neutral-600 font-display font-black">VS</div>
-                 <div className={cn("relative w-20 h-28 rounded-xl overflow-hidden", duel.winner === 'B' ? "ring-2 ring-winner" : "opacity-60")}>
-                    {duel.winner === 'B' && <div className="absolute top-0 right-0 bg-winner p-0.5 rounded-bl-lg z-10"><Trophy size={10} className="text-black" /></div>}
-                    <img src={duel.imgB} alt="B" className="w-full h-full object-cover" />
-                 </div>
-               </div>
-
-               {/* Info */}
-               <div className="flex-1 w-full md:w-auto flex flex-col justify-center">
-                 <div className="flex items-center gap-2 mb-2">
-                   <span className="text-xs font-semibold px-2 py-1 bg-background rounded-md text-neutral-300">{duel.mode}</span>
-                   <span className="text-xs text-neutral-500">{duel.date}</span>
-                 </div>
-                 <div className="text-lg font-display font-medium mb-1">
-                   {duel.winner === 'A' ? 'Photo A' : 'Photo B'} won by {Math.abs(duel.aScore - duel.bScore)} points
-                 </div>
-                 <div className="flex items-center gap-4 text-sm text-neutral-400">
-                   <span className={duel.winner === 'A' ? "text-winner font-bold" : ""}>A: {duel.aScore}</span>
-                   <span className={duel.winner === 'B' ? "text-winner font-bold" : ""}>B: {duel.bScore}</span>
-                 </div>
-               </div>
-               
-               <div className="hidden md:flex pr-4">
-                 <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-neutral-400 group-hover:bg-foreground group-hover:text-background transition-colors">
-                    <span className="font-medium text-xl leading-none">→</span>
-                 </div>
-               </div>
-             </div>
-           </Link>
-         ))}
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {history.map((record) => (
+            <DuelCard 
+              key={record.id} 
+              record={record} 
+              onDelete={handleDelete} 
+              onClick={() => handleViewResult(record)} 
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
+function DuelCard({ record, onDelete, onClick }: { record: DuelRecord, onDelete: (e: React.MouseEvent, id: string) => void, onClick: () => void }) {
+  const winnerScore = record.scores[record.winner].total;
+  const loserLetter = record.winner === 'A' ? 'B' : 'A';
+  const loserScore = record.scores[loserLetter].total;
+  
+  const formattedDate = new Date(record.createdAt).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+
+  return (
+    <div 
+      onClick={onClick}
+      className="group bg-surface hover:bg-surface-hover border border-border hover:border-neutral-700 rounded-3xl p-4 transition-all duration-300 cursor-pointer flex flex-col gap-4 relative"
+    >
+      <button 
+        onClick={(e) => onDelete(e, record.id)}
+        className="absolute top-6 right-6 p-2 bg-black/60 backdrop-blur-md rounded-full text-neutral-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
+      >
+        <Trash2 size={18} />
+      </button>
+
+      {/* Side by Side Preview */}
+      <div className="grid grid-cols-2 gap-2 h-40">
+        <div className="rounded-2xl overflow-hidden relative">
+          <img src={record.previewA} alt="A" className="w-full h-full object-cover" />
+          <div className="absolute top-2 left-2 w-5 h-5 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10">A</div>
+          {record.winner === 'A' && (
+            <div className="absolute bottom-2 right-2 p-1 bg-winner rounded-full shadow-lg">
+              <Trophy size={10} className="text-black" />
+            </div>
+          )}
+        </div>
+        <div className="rounded-2xl overflow-hidden relative">
+          <img src={record.previewB} alt="B" className="w-full h-full object-cover" />
+          <div className="absolute top-2 left-2 w-5 h-5 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10">B</div>
+          {record.winner === 'B' && (
+            <div className="absolute bottom-2 right-2 p-1 bg-winner rounded-full shadow-lg">
+              <Trophy size={10} className="text-black" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex justify-between items-start">
+          <div className="space-y-1">
+             <div className="flex items-center gap-2">
+                <span className="text-xs uppercase tracking-widest font-bold text-neutral-500">{record.mode}</span>
+                <span className="w-1 h-1 bg-neutral-700 rounded-full"></span>
+                <span className="text-xs text-neutral-500 flex items-center gap-1">
+                  <Calendar size={12} /> {formattedDate}
+                </span>
+             </div>
+             <h3 className={cn(
+               "font-display font-bold text-lg",
+               record.winner === 'A' ? "text-blue-400" : "text-violet-400"
+             )}>
+               Photo {record.winner} is the winner
+             </h3>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 bg-black/30 p-3 rounded-2xl border border-border/50">
+           <div className="flex-1 flex flex-col items-center border-r border-border/50">
+             <span className="text-[10px] uppercase tracking-tighter text-neutral-500">Winner</span>
+             <span className="text-xl font-display font-bold text-winner">{winnerScore}</span>
+           </div>
+           <div className="flex-1 flex flex-col items-center">
+             <span className="text-[10px] uppercase tracking-tighter text-neutral-500">Margin</span>
+             <span className="text-xl font-display font-bold">+{record.margin}</span>
+           </div>
+           <div className="flex-1 flex flex-col items-center border-l border-border/50">
+             <span className="text-[10px] uppercase tracking-tighter text-neutral-500">Loser</span>
+             <span className="text-xl font-display font-bold text-neutral-400">{loserScore}</span>
+           </div>
+        </div>
+
+        <p className="text-sm text-neutral-400 line-clamp-1 italic">
+          "{record.summary}"
+        </p>
+
+        <div className="flex items-center justify-center pt-2 text-xs font-bold text-neutral-500 group-hover:text-foreground transition-colors uppercase tracking-widest gap-1">
+          Open Full Results <ArrowRight size={14} />
+        </div>
+      </div>
+    </div>
+  );
+}
