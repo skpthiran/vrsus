@@ -106,23 +106,16 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
           <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
             <span className="text-xs font-black text-white">A</span>
           </div>
+          {/* Combined Top-Left Badge for left side */}
+          <div className="absolute top-12 left-3 flex flex-col gap-1.5 z-10">
+            <span className="text-[10px] font-black px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-md text-white uppercase tracking-wider">{duel.mode}</span>
+            {duel.isOwn && <span className="text-[10px] font-black px-2 py-0.5 bg-accent/80 backdrop-blur-md rounded-md text-white uppercase tracking-wider">YOURS</span>}
+          </div>
           {duel.winner === 'A' && (
             <>
               <div className="absolute inset-0 ring-4 ring-inset" style={{ '--tw-ring-color': '#fbbf24' } as any} />
-              <div className="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-black px-2 py-0.5 rounded-full z-10">👑 WIN</div>
-              <div className="absolute bottom-2 left-2 z-10">
-                <span className="bg-black/80 backdrop-blur-sm text-yellow-400 font-display font-black text-xl px-3 py-1.5 rounded-xl border border-yellow-400/40 shadow-[0_0_12px_rgba(251,191,36,0.4)]">
-                  {duel.aScore}
-                </span>
-              </div>
+              <div className="absolute top-2 right-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full z-10 shadow-[0_4px_12px_rgba(251,191,36,0.3)]">👑 WIN</div>
             </>
-          )}
-          {duel.winner === 'B' && (
-            <div className="absolute bottom-2 left-2 z-10">
-              <span className="bg-black/80 backdrop-blur-sm text-white font-display font-black text-xl px-3 py-1.5 rounded-xl border border-white/20">
-                {duel.aScore}
-              </span>
-            </div>
           )}
         </div>
 
@@ -149,35 +142,45 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
           {duel.winner === 'B' && (
             <>
               <div className="absolute inset-0 ring-4 ring-inset" style={{ '--tw-ring-color': '#fbbf24' } as any} />
-              <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-black px-2 py-0.5 rounded-full z-10">👑 WIN</div>
-              <div className="absolute bottom-2 right-2 z-10">
-                <span className="bg-black/80 backdrop-blur-sm text-yellow-400 font-display font-black text-xl px-3 py-1.5 rounded-xl border border-yellow-400/40 shadow-[0_0_12px_rgba(251,191,36,0.4)]">
-                  {duel.bScore}
-                </span>
-              </div>
+              <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full z-10 shadow-[0_4px_12px_rgba(251,191,36,0.3)]">👑 WIN</div>
             </>
-          )}
-          {duel.winner === 'A' && (
-            <div className="absolute bottom-2 right-2 z-10">
-              <span className="bg-black/80 backdrop-blur-sm text-white font-display font-black text-xl px-3 py-1.5 rounded-xl border border-white/20">
-                {duel.bScore}
-              </span>
-            </div>
           )}
         </div>
 
         {/* VS badge */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-black/70 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center z-10">
-          <span className="font-display font-black text-white text-xs">VS</span>
+          <span className="font-display font-black text-white text-xs italic">VS</span>
         </div>
 
-        {/* Mode + summary overlay */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-2 py-1 bg-white/20 backdrop-blur-md rounded-md text-white">{duel.mode}</span>
-            {duel.isOwn && <span className="text-xs font-bold px-2 py-1 bg-accent/80 backdrop-blur-md rounded-md text-white">YOUR DUEL</span>}
+        {/* Unified Score + Description Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 pt-10 flex flex-col gap-3 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
+          {/* Score Row */}
+          <div className="flex items-center justify-between">
+            <span className={cn(
+              "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
+              duel.winner === 'A' 
+                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-110" 
+                : "bg-black/80 text-white border-white/10"
+            )}>
+              {duel.aScore}
+            </span>
+            
+            <span className={cn(
+              "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
+              duel.winner === 'B' 
+                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-110" 
+                : "bg-black/80 text-white border-white/10"
+            )}>
+              {duel.bScore}
+            </span>
           </div>
-          {duel.reason && <p className="text-white text-xs mt-1 line-clamp-1 hidden md:block">"{duel.reason}"</p>}
+          
+          {/* Description Text */}
+          {duel.reason && (
+            <p className="text-white font-medium text-xs line-clamp-1 italic text-center opacity-80 px-2">
+              "{duel.reason}"
+            </p>
+          )}
         </div>
       </div>
 
