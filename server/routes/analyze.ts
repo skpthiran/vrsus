@@ -13,9 +13,10 @@ router.post('/analyze', async (req: Request, res: Response) => {
     },
   });
 
-  try {
-    const { photoA, photoB, mode = 'general' } = req.body;
+  const { photoA, photoB, mode = 'general' } = req.body;
+  console.log('📥 Analyze request received, mode:', mode);
 
+  try {
     if (!photoA || !photoB) {
       return res.status(400).json({ error: 'Both photoA and photoB are required' });
     }
@@ -43,8 +44,22 @@ router.post('/analyze', async (req: Request, res: Response) => {
     });
 
     const rawStage1 = stage1.choices[0].message.content || '{}';
-    const cleanStage1 = rawStage1.replace(/```json|```/g, '').trim();
-    const visualScores = JSON.parse(cleanStage1);
+    console.log('✅ Stage 1 raw response:', rawStage1);
+    
+    // Improved JSON extraction: find the first { and the last }
+    const extractJSON = (text: string) => {
+      const match = text.match(/\{[\s\S]*\}/);
+      return match ? match[0] : text;
+    };
+
+    let visualScores;
+    try {
+      visualScores = JSON.parse(extractJSON(rawStage1));
+      console.log('✅ Stage 1 parsed OK');
+    } catch (e) {
+      console.error('❌ Stage 1 JSON parse failed. Raw was:', rawStage1);
+      throw new Error('Stage 1 JSON parse failed');
+    }
 
     // ── STAGE 2: Judgment — DeepSeek R1 ───────────────────────────────────
     const stage2 = await openrouter.chat.completions.create({
@@ -56,14 +71,33 @@ router.post('/analyze', async (req: Request, res: Response) => {
         },
         {
           role: 'user',
-          content: `Given these visual scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nCalculate a total score out of 100 for each photo using equal category weights. Pick a clear winner. Return ONLY this JSON:\n{"winner":"A","scores":{"A":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0},"B":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0}},"margin":0,"winning_edge":"One sentence on the exact deciding factor.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+          content: `Given these visual scores for mode "${mode}":
+${JSON.stringify(visualScores, null, 2)}
+
+Rules:
+- Copy the category scores EXACTLY as given above (do not change any values)
+- Calculate total as: sum of all 6 category scores multiplied by (100/60) to normalize to 100
+- Round total to nearest integer
+- Pick the winner based on higher total
+- Calculate margin as the difference between the two totals
+
+Return ONLY this JSON with no extra text:
+{"winner":"A","scores":{"A":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0},"B":{"confidence":0,"lighting":0,"expression":0,"grooming":0,"composition":0,"presence":0,"total":0}},"margin":0,"winning_edge":"One sentence on the exact deciding factor.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
         },
       ],
     });
 
     const rawStage2 = stage2.choices[0].message.content || '{}';
-    const cleanStage2 = rawStage2.replace(/```json|```/g, '').trim();
-    const judgment = JSON.parse(cleanStage2);
+    console.log('✅ Stage 2 raw response:', rawStage2);
+    
+    let judgment;
+    try {
+      judgment = JSON.parse(extractJSON(rawStage2));
+      console.log('✅ Stage 2 parsed OK');
+    } catch (e) {
+      console.error('❌ Stage 2 JSON parse failed. Raw was:', rawStage2);
+      throw new Error('Stage 2 JSON parse failed');
+    }
 
     // ── STAGE 3: Glow-Up Tips — Llama 3.3 70B ────────────────────────────
     const loser = judgment.winner === 'A' ? 'B' : 'A';
@@ -84,8 +118,16 @@ router.post('/analyze', async (req: Request, res: Response) => {
     });
 
     const rawStage3 = stage3.choices[0].message.content || '{}';
-    const cleanStage3 = rawStage3.replace(/```json|```/g, '').trim();
-    const tips = JSON.parse(cleanStage3);
+    console.log('✅ Stage 3 raw response:', rawStage3);
+    
+    let tips;
+    try {
+      tips = JSON.parse(extractJSON(rawStage3));
+      console.log('✅ Stage 3 parsed OK');
+    } catch (e) {
+      console.error('❌ Stage 3 JSON parse failed. Raw was:', rawStage3);
+      throw new Error('Stage 3 JSON parse failed');
+    }
 
     // ── FINAL RESPONSE ────────────────────────────────────────────────────
     return res.json({
@@ -98,7 +140,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
     });
 
   } catch (err: any) {
-    console.error('Analysis pipeline error:', err.message);
+    console.error('❌ Pipeline failed at stage:', err.message, err.stack);
     return res.status(500).json({ error: 'Analysis failed', detail: err.message });
   }
 });
