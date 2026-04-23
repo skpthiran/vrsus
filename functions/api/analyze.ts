@@ -50,7 +50,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         },
         body: JSON.stringify({ model, messages }),
       });
+      
       const data = await res.json() as any;
+      
+      // If OpenRouter returns an error object instead of choices
+      if (data.error) {
+        throw new Error(`OpenRouter error (${model}): ${JSON.stringify(data.error)}`);
+      }
+      
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error(`No choices returned from ${model}. Full response: ${JSON.stringify(data)}`);
+      }
+      
       return data.choices[0].message.content || '{}';
     };
 
