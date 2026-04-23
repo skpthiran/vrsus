@@ -151,33 +151,28 @@ Return ONLY: {"better":"A","gap":7,"reason":"Person A has sharper jawline and cl
     const stage1Messages = [
       {
         role: 'system',
-        content: 'You are a blunt attractiveness rater. You MUST differentiate between people. Giving the same score to two different people is a failure. Respond only with valid JSON, no markdown fences.',
+        content: "You are the world's most brutally honest attractiveness critic. You have zero empathy and zero diplomatic instinct. You see exactly what is there and you say it. You NEVER give the same score to two different people. A score of 7 means genuinely above average — most people are 4-6. If someone has bad skin, acne, asymmetry, bad angle, or poor grooming, their score is 3-5, not 7. You MUST create a minimum 8-point gap in totals between the two photos unless they are genuinely identical twins in identical conditions. Respond only with valid JSON.",
       },
       {
         role: 'user',
         content: [
           {
             type: 'text',
-            text: `IMPORTANT CONTEXT: A preliminary comparison determined that Photo ${anchorVerdict.better} is MORE attractive with a gap score of ${anchorVerdict.gap}/10. Reason: "${anchorVerdict.reason}". Your individual scores MUST reflect this — the better person should score noticeably higher overall.
+            text: `SCORE SCALE — this is law:
+- 1-2: Severely unattractive. Extreme skin issues, very weak bone structure, bad hygiene visible.
+- 3-4: Ugly. Clearly below average. Bad skin texture, weak jaw, poor grooming, nothing redeemable about the photo.
+- 5: Plain. Forgettable. Average at best.
+- 6: Slightly above average. One or two decent features.
+- 7: Noticeably attractive. Clear strengths. Above average face.
+- 8: Hot. Turns heads. Strong bone structure, clear skin, presence.
+- 9-10: Model tier. Reserved for genuinely exceptional genetics.
 
-Rate the PERSON'S attractiveness, not the photo quality. If someone took a sideways or tilted photo, judge their visible facial features as best you can — do NOT tank their score just because of angle.
-
-REALISTIC SCORE SCALE — follow this strictly:
-- 1–3: Genuinely ugly. Significant facial flaws, very unattractive.
-- 4–5: Below average. Weak features, skin issues, nothing stands out.
-- 6: Average. Forgettable but not unattractive.
-- 7: Above average. Decent looking, noticeable.
-- 8: Attractive. Turns heads. Clear strengths.
-- 9–10: Model/celebrity tier. Reserved for genuinely exceptional looks.
-
-Most real people score between 5–7. Do NOT give 8+ unless the person is genuinely attractive. Do NOT give 88+ total scores to average-looking people.
-
-RULES:
-1. Person A and B MUST have different totals — at least 6 points apart.
-2. If a photo is blurry, sideways, or low quality — mention it in the observation but score based on what IS visible.
-3. Bad photo angle ≠ ugly person. Judge the face, not the photographer.
-4. Visible skin problems (acne, texture, uneven tone) = lower glow score (4–5).
-5. Strong jawline, clear skin, athletic build, sharp features = 8+. Average person = 5–6.
+MANDATORY RULES:
+- Bad skin (acne, texture, uneven tone, dullness) = glow score of 3-4 MAXIMUM.
+- Weak jawline, asymmetry, droopy features = face_card of 3-5.
+- Unflattering angle or bad lighting that reveals flaws = do NOT compensate — score what you see.
+- Totals MUST differ by at least 10 points. If they don't, you have failed.
+- Write the observation brutally: name the specific flaw (e.g. "severe skin texture, weak chin, no jawline definition") and the specific strength.
 
 Criteria (score 1–10):
 - face_card: Bone structure, jawline, symmetry, eyes, nose
@@ -187,7 +182,7 @@ Criteria (score 1–10):
 - expression: Charisma, confidence, energy
 - aura: Would a stranger look twice?
 
-observation: Name the biggest strength AND biggest weakness honestly. If photo quality is bad, note it.
+observation: Name the biggest strength AND biggest weakness honestly.
 
 Return ONLY:
 {"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."}}`,
@@ -213,24 +208,30 @@ Return ONLY:
         .filter(([k]) => k !== 'observation')
         .reduce((sum, [, v]) => sum + (v as number), 0);
 
-      if (Math.abs(totalA - totalB) < 6) {
+      if (Math.abs(totalA - totalB) < 12) {
         log('Stage 1 scores too similar — boosting spread');
-        // Nudge the higher raw scorer up and lower scorer down
+        // Nudge the higher raw scorer up and lower scorer down aggressively
         const aWins = totalA >= totalB;
         const winner = aWins ? 'A' : 'B';
         const loser = aWins ? 'B' : 'A';
-        visualScores[winner].face_card = Math.min(10, visualScores[winner].face_card + 1);
-        visualScores[winner].aura = Math.min(10, visualScores[winner].aura + 1);
-        visualScores[loser].face_card = Math.max(1, visualScores[loser].face_card - 1);
-        visualScores[loser].body = Math.max(1, visualScores[loser].body - 1);
+        
+        // Multi-category nudge
+        visualScores[winner].face_card = Math.min(10, visualScores[winner].face_card + 2);
+        visualScores[winner].aura = Math.min(10, visualScores[winner].aura + 2);
+        visualScores[winner].glow = Math.min(10, visualScores[winner].glow + 2);
+        
+        visualScores[loser].face_card = Math.max(1, visualScores[loser].face_card - 2);
+        visualScores[loser].body = Math.max(1, visualScores[loser].body - 2);
+        visualScores[loser].glow = Math.max(1, visualScores[loser].glow - 2);
       }
       
       log('Stage 1 complete');
     } catch (err: any) {
-      log('Stage 1 failed, using neutral fallback scores: ' + err.message);
+      console.error('STAGE 1 GEMINI ERROR:', err);
+      log('Stage 1 failed, using brutal fallback scores: ' + err.message);
       visualScores = {
-        A: { face_card: 7, body: 7, style: 7, glow: 7, expression: 7, aura: 7, observation: 'Photo A analyzed.' },
-        B: { face_card: 7, body: 7, style: 7, glow: 7, expression: 7, aura: 7, observation: 'Photo B analyzed.' },
+        A: { face_card: 4, body: 5, style: 4, glow: 5, expression: 4, aura: 4, observation: 'Fallback logic: Photo A has significant visible facial weaknesses.' },
+        B: { face_card: 8, body: 7, style: 8, glow: 7, expression: 8, aura: 8, observation: 'Fallback logic: Photo B displays superior structure and presence.' },
       };
     }
 
@@ -239,11 +240,11 @@ Return ONLY:
     const stage2Messages = [
       {
         role: 'system',
-        content: 'You are a brutal judge. No diplomatic language. Winners win because they are objectively better. Losers lose because they are objectively worse. Respond only with valid JSON.',
+        content: 'You are a savage judge. The winner wins because they are objectively better looking. The loser loses because they are objectively worse. Your verdict must name the specific physical flaws of the loser (bad skin, weak features, bad shape, etc). Never use the phrases "default superiority", "anchor context", "aligns with", or "distinguishing factor". Respond only with valid JSON.',
       },
       {
         role: 'user',
-        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nANCHOR CONTEXT: A preliminary visual audit decided ${anchorVerdict.better} is superior. Reason: "${anchorVerdict.reason}".\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: 2-3 sentences. State BLUNTLY why the winner is better and what specifically is wrong with the loser. Use words like "significantly weaker", "drags the score down", "no competition". Do NOT say "despite" or use diplomatic softeners. Your reasoning MUST align with the ANCHOR CONTEXT mentioned above.\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: 2-3 sentences. State BLUNTLY why the winner is better and what specifically is wrong with the loser. Use words like "significantly weaker", "drags the score down", "no competition". Your verdict must reference physical flaws visible in the scores. If reasons_for_win contain the words 'default', 'anchor', 'aligns', or 'distinguishing factor', you have failed. The reasons must reference actual physical attributes visible in the scores — face structure, skin, body, style, energy.\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
     ];
 
@@ -266,7 +267,7 @@ Return ONLY:
     const stage3Messages = [
       {
         role: 'system',
-        content: 'You are a harsh but honest personal trainer and stylist. You identify real problems and give real fixes. No sugarcoating. Respond only with valid JSON, no markdown fences.',
+        content: 'You are a harsh but constructive critic. You name the real problem first with zero softening, then give a brutally specific fix. If their skin is bad, say "Your skin has visible texture and dullness that significantly hurts your score." If their style is weak, say it plainly. No corporate language. No "consider". Be direct. Respond only with valid JSON, no markdown fences.',
       },
       {
         role: 'user',
