@@ -125,23 +125,34 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         content: [
           {
             type: 'text',
-            text: `Look at these two people carefully. They are DIFFERENT people with DIFFERENT levels of attractiveness. Your job is to score them honestly and DIFFERENTLY.
+            text: `Rate the PERSON'S attractiveness, not the photo quality. If someone took a sideways or tilted photo, judge their visible facial features as best you can — do NOT tank their score just because of angle.
 
-RULES YOU CANNOT BREAK:
-1. You CANNOT give Person A and Person B the same total score. They must differ by at least 8 points.
-2. You CANNOT give any single person more than ONE score of 7. Everything else must be 8+ (genuine strength) or 6 and below (weakness).
-3. A 5 = below average. A 3 = ugly. A 9 = model-tier. Stop hiding in the 6-7 range.
-4. Age, skin damage, weak jaw, bad body = LOW scores. Defined jaw, clear skin, athletic build, strong features = HIGH scores.
+REALISTIC SCORE SCALE — follow this strictly:
+- 1–3: Genuinely ugly. Significant facial flaws, very unattractive.
+- 4–5: Below average. Weak features, skin issues, nothing stands out.
+- 6: Average. Forgettable but not unattractive.
+- 7: Above average. Decent looking, noticeable.
+- 8: Attractive. Turns heads. Clear strengths.
+- 9–10: Model/celebrity tier. Reserved for genuinely exceptional looks.
 
-Criteria:
-- face_card: Jawline, bone structure, symmetry, eyes, nose. Weak jaw = 4 or below. Model jaw = 8+.
-- body: Physique, build, posture visible in photo. Unfit = 4 or below. Athletic = 8+.
-- style: Outfit, grooming, fit of clothes. Basic/wrinkled = 4. Sharp = 8+.
-- glow: Skin quality, hair, freshness. Aged/dull skin = 3-4. Clear glowing skin = 8+.
-- expression: Charisma, confidence, energy in photo.
-- aura: Raw magnetism. Would a stranger look twice?
+Most real people score between 5–7. Do NOT give 8+ unless the person is genuinely attractive. Do NOT give 88+ total scores to average-looking people.
 
-observation: Be blunt. "Weak jaw, aged skin, zero body visible" or "Sharp jawline, athletic build, clean presentation."
+RULES:
+1. Person A and B MUST have different totals — at least 6 points apart.
+2. If a photo is blurry, sideways, or low quality — mention it in the observation but score based on what IS visible.
+3. Bad photo angle ≠ ugly person. Judge the face, not the photographer.
+4. Visible skin problems (acne, texture, uneven tone) = lower glow score (4–5).
+5. Strong jawline, clear skin, athletic build, sharp features = 8+. Average person = 5–6.
+
+Criteria (score 1–10):
+- face_card: Bone structure, jawline, symmetry, eyes, nose
+- body: Physique, build, posture — only score what's visible
+- style: Outfit, grooming, presentation
+- glow: Skin clarity, hair quality, freshness
+- expression: Charisma, confidence, energy
+- aura: Would a stranger look twice?
+
+observation: Name the biggest strength AND biggest weakness honestly. If photo quality is bad, note it.
 
 Return ONLY:
 {"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."}}`,
@@ -167,7 +178,7 @@ Return ONLY:
         .filter(([k]) => k !== 'observation')
         .reduce((sum, [, v]) => sum + (v as number), 0);
 
-      if (Math.abs(totalA - totalB) < 4) {
+      if (Math.abs(totalA - totalB) < 6) {
         log('Stage 1 scores too similar — boosting spread');
         // Nudge the higher raw scorer up and lower scorer down
         const aWins = totalA >= totalB;
