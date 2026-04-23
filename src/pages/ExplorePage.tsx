@@ -24,10 +24,8 @@ export function ExplorePage() {
       setLoading(true);
       try {
         console.log('Fetching public duels...');
-        const [duels, leaderboardData] = await Promise.all([
-          getPublicDuels(),
-          import('@/lib/duels').then(m => m.getWeeklyLeaderboard())
-        ]);
+        const duels = await getPublicDuels();
+        const leaderboardData: any[] = [];
         
         console.log('Explore duels loaded:', duels);
 
