@@ -144,9 +144,9 @@ export function ResultsPage() {
                     <div key={i} className="flex items-center gap-4 bg-surface p-4 rounded-2xl border border-border">
                        <div className="w-12 text-center font-display font-bold text-lg text-neutral-400 flex-shrink-0">{scoreA}</div>
                        <div className="flex-1">
-                          <div className="flex justify-between text-xs uppercase tracking-wider font-semibold mb-2">
+                          <div className="flex justify-between text-[10px] md:text-xs uppercase tracking-wider font-semibold mb-2">
                              <span className="text-neutral-500">A</span>
-                             <span className="text-foreground capitalize">{cat}</span>
+                             <span className="text-foreground truncate px-2 capitalize">{cat}</span>
                              <span className="text-winner">B</span>
                           </div>
                           <div className="relative h-2 bg-black rounded-full overflow-hidden flex">
@@ -179,16 +179,16 @@ export function ResultsPage() {
              </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-border/50">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-8 pt-8 border-t border-border/50">
              {/* Why Winner Wins */}
-             <div className="space-y-6">
-                <h3 className="flex items-center gap-2 text-xl font-display font-bold text-white">
-                  <CheckCircle2 className="text-winner" />
+             <div className="space-y-4 md:space-y-6">
+                <h3 className="flex items-center gap-2 text-lg md:text-xl font-display font-bold text-white">
+                  <CheckCircle2 className="text-winner w-5 h-5" />
                   Why Photo {result.winner} Wins
                 </h3>
-                <ul className="space-y-4">
+                <ul className="space-y-3 md:space-y-4">
                    {result.reasons_for_win.map((item: string, i: number) => (
-                     <li key={i} className="flex gap-3 text-neutral-300 bg-surface p-4 rounded-2xl border border-border">
+                     <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-winner mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
                      </li>
@@ -197,14 +197,14 @@ export function ResultsPage() {
              </div>
 
              {/* Where Loser Falls Behind & Tips */}
-             <div className="space-y-6">
-                <h3 className="flex items-center gap-2 text-xl font-display font-bold text-white">
-                  <ArrowUpRight className="text-accent" />
+             <div className="space-y-4 md:space-y-6">
+                <h3 className="flex items-center gap-2 text-lg md:text-xl font-display font-bold text-white">
+                  <ArrowUpRight className="text-accent w-5 h-5" />
                   Improvement Tips for Photo {loserLetter}
                 </h3>
-                <ul className="space-y-4">
+                <ul className="space-y-3 md:space-y-4">
                    {result.weaknesses_of_loser.map((item: string, i: number) => (
-                     <li key={i} className="flex gap-3 text-neutral-300 bg-surface p-4 rounded-2xl border border-border">
+                     <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
                      </li>

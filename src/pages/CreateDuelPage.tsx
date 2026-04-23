@@ -127,7 +127,7 @@ export function CreateDuelPage() {
 
        <div className="relative">
          {/* Grid for Upload */}
-         <div className="grid md:grid-cols-2 gap-8 md:gap-16">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
             {/* Photo A */}
             <UploadCard 
                label="Photo A" 
@@ -146,16 +146,16 @@ export function CreateDuelPage() {
             />
          </div>
 
-         {/* VS Badge Center */}
-         <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-background border border-border/50 rounded-full flex-col justify-center items-center z-10 shadow-2xl">
-            <span className="font-display font-black text-2xl text-transparent bg-clip-text bg-gradient-to-br from-neutral-200 to-neutral-600">VS</span>
+         {/* VS Badge */}
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 bg-background border border-border/50 rounded-full flex-col justify-center items-center z-10 shadow-2xl flex">
+            <span className="font-display font-black text-xl md:text-2xl text-transparent bg-clip-text bg-gradient-to-br from-neutral-200 to-neutral-600">VS</span>
          </div>
        </div>
 
        <div className="max-w-xl mx-auto mt-16 space-y-8">
           <div className="space-y-4">
              <label className="block text-sm font-semibold tracking-wide uppercase text-neutral-400 text-center">Comparison Context</label>
-             <div className="flex flex-wrap justify-center gap-2">
+             <div className="flex overflow-x-auto gap-2 pb-2 -mx-4 px-4 hide-scrollbar justify-start md:justify-center">
                 {[
                   { id: 'general', label: 'General' },
                   { id: 'dating', label: 'Dating Profile' },
@@ -176,7 +176,7 @@ export function CreateDuelPage() {
              </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-surface border border-border">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-surface border border-border min-h-[64px]">
              <div className="flex items-center gap-3">
                <div className="p-2 bg-accent/20 rounded-lg text-accent">
                  <Zap size={20} />
@@ -241,10 +241,10 @@ function UploadCard({ label, slot, onRemove, onUpload, accent }: { label: string
            <button onClick={onRemove} className="text-xs text-neutral-500 hover:text-red-400 transition-colors uppercase tracking-wider font-semibold">Remove</button>
          )}
        </div>
-       <div className={cn(
-         "aspect-[3/4] rounded-3xl overflow-hidden relative transition-all duration-300 border-2",
-         slot.preview ? (accent === 'blue' ? 'border-transparent shadow-[0_0_40px_rgba(59,130,246,0.1)]' : 'border-transparent shadow-[0_0_40px_rgba(139,92,246,0.1)]') : "border-dashed border-border bg-surface hover:bg-surface-hover hover:border-neutral-600 cursor-pointer"
-       )}
+        <div className={cn(
+          "aspect-[3/4] md:aspect-[3/4] min-h-[280px] md:min-h-0 rounded-3xl overflow-hidden relative transition-all duration-300 border-2",
+          slot.preview ? (accent === 'blue' ? 'border-transparent shadow-[0_0_40px_rgba(59,130,246,0.1)]' : 'border-transparent shadow-[0_0_40px_rgba(139,92,246,0.1)]') : "border-dashed border-border bg-surface hover:bg-surface-hover hover:border-neutral-600 cursor-pointer"
+        )}
        onClick={() => !slot.preview && fileInputRef.current?.click()}
        >
           {slot.preview ? (
