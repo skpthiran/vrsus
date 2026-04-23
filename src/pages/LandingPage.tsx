@@ -1,12 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Play, Upload, Sparkles, Trophy, Share2, Shield, Search } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 export function LandingPage() {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Top Logo Bar */}
+      <div className="absolute top-0 left-0 right-0 px-6 py-4 flex items-center z-50">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+            <span className="font-display font-black text-white text-sm">V</span>
+          </div>
+          <span className="font-display font-bold text-lg tracking-tight text-white">VRSUS</span>
+        </Link>
+      </div>
       {/* Hero Section */}
       <section className="relative px-4 pt-20 pb-32 md:pt-32 md:pb-40 overflow-hidden flex flex-col items-center text-center">
         <div className="absolute inset-0 bg-gradient-vrsus -z-20"></div>
@@ -43,11 +53,13 @@ export function LandingPage() {
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 glass text-lg">
-              <Play className="mr-2 w-5 h-5" />
-              See Demo
-            </Button>
-          </div>
+<button 
+                onClick={() => navigate('/auth')}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 border border-white/20 text-white font-semibold px-8 h-14 rounded-full hover:bg-white/10 transition-all glass"
+              >
+                Sign In
+              </button>
+            </div>
         </motion.div>
 
         {/* Hero Visual */}
