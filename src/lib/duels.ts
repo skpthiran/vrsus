@@ -32,14 +32,19 @@ export async function saveDuelToSupabase(record: DuelRecord, userId: string): Pr
 }
 
 export async function getPublicDuels() {
+  const { data: { user } } = await supabase.auth.getUser();
+  
   const { data, error } = await supabase
     .from('duels')
-    .select('*, profiles(username, display_name, avatar_url)')
-    .eq('is_public', true)
+    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, image_a_url, image_b_url, is_public, created_at')
+    .or(`is_public.eq.true${user ? `,user_id.eq.${user.id}` : ''}`)
     .order('created_at', { ascending: false })
     .limit(50);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error:', error);
+    throw error;
+  }
   return data || [];
 }
 

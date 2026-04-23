@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { getHistory } from '../lib/history';
 import { getPublicDuels } from '../lib/duels';
 import { useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 const SEED_DUELS = [
   { id: 'seed-1', mode: 'Dating Profile', winner: 'B', aScore: 72, bScore: 94, likes: '1.2k', comments: 124, imgA: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&fit=crop', imgB: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop', reason: "Stronger background depth and more inviting expression." },
@@ -14,12 +15,14 @@ const SEED_DUELS = [
 ];
 
 export function ExplorePage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('Trending');
   const [reactions, setReactions] = useState<Record<string, { agree: number; disagree: number; fire: number; userReaction: string | null }>>({});
   const [dbDuels, setDbDuels] = useState<any[]>([]);
 
   useEffect(() => {
     getPublicDuels().then(duels => {
+      console.log('📡 Public duels from Supabase:', duels.length, duels);
       setDbDuels(duels.map(d => ({
         id: d.id,
         mode: d.mode.charAt(0).toUpperCase() + d.mode.slice(1),
@@ -31,30 +34,13 @@ export function ExplorePage() {
         imgA: d.image_a_url,
         imgB: d.image_b_url,
         reason: d.summary,
-        isOwn: false,
-        record: null, // DB records don't have the same DuelRecord object yet
+        isOwn: user ? d.user_id === user.id : false,
+        record: null,
       })));
-    }).catch(err => console.error("Failed to load public duels:", err));
-  }, []);
-
-  // Merge history duels + seed duels
-  const historyDuels = getHistory().map(r => ({
-    id: r.id,
-    mode: r.mode.charAt(0).toUpperCase() + r.mode.slice(1),
-    winner: r.winner,
-    aScore: r.scores.A.total,
-    bScore: r.scores.B.total,
-    likes: String(Math.floor(Math.random() * 500) + 10),
-    comments: Math.floor(Math.random() * 50) + 1,
-    imgA: r.previewA,
-    imgB: r.previewB,
-    reason: r.summary,
-    isOwn: true,
-    record: r,
-  }));
+    }).catch(err => console.error('❌ Failed to load public duels:', err));
+  }, [user]);
 
   const allDuels = [
-    ...historyDuels,
     ...dbDuels,
     ...SEED_DUELS.map(s => ({ ...s, isOwn: false, record: null })),
   ];
@@ -91,9 +77,9 @@ export function ExplorePage() {
   };
 
   const handleCardClick = (duel: any) => {
-    if (!duel.isOwn || !duel.record) return;
-    sessionStorage.setItem('vrsus_result', JSON.stringify(duel.record));
-    sessionStorage.setItem('vrsus_previews', JSON.stringify({ previewA: duel.record.previewA, previewB: duel.record.previewB }));
+    if (!duel.isOwn) return;
+    // Store minimal info and navigate
+    sessionStorage.setItem('vrsus_explore_duel_id', duel.id);
     window.location.href = '/duel/results';
   };
 
