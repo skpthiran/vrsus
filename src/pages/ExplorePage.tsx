@@ -16,21 +16,22 @@ const CATEGORIES = [
 export function ExplorePage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('all');
-  const [dbDuels, setDbDuels] = useState<any[]>([]);
+  const [duels, setDuels] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 10;
 
-  const loadMore = async () => {
+  const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
-      const duels = await getPublicDuels(page, 10);
-      if (duels.length < 10) setHasMore(false);
+      const next = await getPublicDuels(page, PAGE_SIZE);
+      if (next.length < PAGE_SIZE) setHasMore(false);
 
-      const mapped = duels.map(d => ({
+      const mapped = next.map(d => ({
         id: d.id,
         mode: d.mode.charAt(0).toUpperCase() + d.mode.slice(1),
         winner: d.winner,
@@ -43,7 +44,7 @@ export function ExplorePage() {
         createdAt: d.created_at,
       }));
 
-      setDbDuels(prev => [...prev, ...mapped]);
+      setDuels(prev => [...prev, ...mapped]);
       setPage(prev => prev + 1);
     } catch (err) {
       console.error('❌ Failed to load explore data:', err);
@@ -51,7 +52,7 @@ export function ExplorePage() {
       setLoadingMore(false);
       setLoading(false);
     }
-  };
+  }, [loadingMore, hasMore, page]);
 
   useEffect(() => {
     loadMore();
@@ -161,7 +162,7 @@ export function ExplorePage() {
               )}
             </div>
           </div>
-        ) : dbDuels.length === 0 ? (
+        ) : duels.length === 0 ? (
           <div className="text-center py-20 bg-surface rounded-[2rem] border border-dashed border-neutral-800">
             <Trophy className="mx-auto text-neutral-700 mb-4" size={48} />
             <p className="text-neutral-500 font-bold">No live duels yet.</p>
@@ -173,7 +174,7 @@ export function ExplorePage() {
             </button>
           </div>
         ) : (
-          dbDuels.map((duel) => (
+          duels.map((duel) => (
             <div key={duel.id} className="relative">
               <DuelCard 
                 duel={duel} 
@@ -191,7 +192,7 @@ export function ExplorePage() {
       </div>
 
       {/* Daily Leaderboard Card (Social proof) */}
-      {!loading && dbDuels.length > 0 && (
+      {!loading && duels.length > 0 && (
         <div className="mt-8 p-6 bg-accent/5 border border-accent/10 rounded-[2rem] text-center mb-10 overflow-hidden relative">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 blur-[50px] rounded-full" />
           <Info className="mx-auto text-accent mb-2" size={24} />

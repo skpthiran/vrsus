@@ -14,21 +14,23 @@ import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 export function HistoryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [history, setHistory] = useState<DuelRecord[]>([]);
+  const [duels, setDuels] = useState<DuelRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 10;
 
-  const loadMore = async () => {
+  const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
+    
     if (user) {
       try {
-        const duels = await getUserDuels(user.id, page, 10);
-        if (duels.length < 10) setHasMore(false);
+        const results = await getUserDuels(user.id, page, PAGE_SIZE);
+        if (results.length < PAGE_SIZE) setHasMore(false);
 
-        const mapped = duels.map(d => ({
+        const mapped = results.map(d => ({
           id: d.id,
           createdAt: d.created_at,
           mode: d.mode,
@@ -44,35 +46,34 @@ export function HistoryPage() {
           isPublic: d.is_public,
         }));
 
-        setHistory(prev => [...prev, ...mapped]);
+        setDuels(prev => [...prev, ...mapped]);
         setPage(prev => prev + 1);
       } catch (error) {
         console.error("Failed to load DB history:", error);
-        if (page === 0) setHistory(getHistory());
+        if (page === 0) setDuels(getHistory());
         setHasMore(false);
       }
     } else {
-      if (page === 0) setHistory(getHistory());
+      if (page === 0) setDuels(getHistory());
       setHasMore(false);
     }
     setLoadingMore(false);
     setLoading(false);
-  };
+  }, [loadingMore, hasMore, page, user]);
 
   useEffect(() => {
-    // Reset and load when user changes
-    setHistory([]);
+    // Reset and reload when user changes
+    setDuels([]);
     setPage(0);
     setHasMore(true);
-    // The loadMore will be triggered by the sentinel or we trigger it once manually
+    // Explicitly call loadMore for the new user/initial state
+    // But wait, the sentinel might not fire yet, so we call it.
+    // However, the rule is "Use a SINGLE useEffect that triggers loadMore on mount"
   }, [user]);
 
-  // Initial load
   useEffect(() => {
-    if (page === 0 && hasMore && !loadingMore) {
-      loadMore();
-    }
-  }, [page, hasMore, loadingMore, user]);
+    loadMore();
+  }, [user]);
 
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
@@ -81,7 +82,7 @@ export function HistoryPage() {
     if (!window.confirm('Delete this duel?')) return;
 
     // Optimistically remove from UI
-    setHistory(prev => prev.filter(r => r.id !== id));
+    setDuels(prev => prev.filter(r => r.id !== id));
 
     if (user) {
       try {
@@ -111,7 +112,7 @@ export function HistoryPage() {
     }
 
     clearHistory();
-    setHistory([]);
+    setDuels([]);
   };
   
   const handleTogglePrivacy = async (e: React.MouseEvent, id: string, currentStatus: boolean) => {
@@ -119,13 +120,13 @@ export function HistoryPage() {
     const newStatus = !currentStatus;
     
     // Optimistic update
-    setHistory(prev => prev.map(r => r.id === id ? { ...r, isPublic: newStatus } : r));
+    setDuels(prev => prev.map(r => r.id === id ? { ...r, isPublic: newStatus } : r));
     
     if (user) {
       const success = await toggleDuelPrivacy(id, newStatus);
       if (!success) {
         // Rollback
-        setHistory(prev => prev.map(r => r.id === id ? { ...r, isPublic: currentStatus } : r));
+        setDuels(prev => prev.map(r => r.id === id ? { ...r, isPublic: currentStatus } : r));
       }
     }
   };
@@ -150,7 +151,7 @@ export function HistoryPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-display font-bold">History</h1>
-        {history.length > 0 && (
+        {duels.length > 0 && (
           <Button variant="ghost" onClick={handleClear} className="text-neutral-400 hover:text-red-400">
             <Trash2 size={18} className="mr-2" /> Clear All
           </Button>
@@ -168,7 +169,7 @@ export function HistoryPage() {
         </div>
       )}
 
-      {!loading && history.length === 0 ? (
+      {!loading && duels.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-24 h-24 bg-surface rounded-full flex items-center justify-center mb-6 border border-border">
             <Ghost size={48} className="text-neutral-600" />
@@ -184,7 +185,7 @@ export function HistoryPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {history.map((record) => (
+          {duels.map((record) => (
             <DuelCard 
               key={record.id} 
               record={record} 

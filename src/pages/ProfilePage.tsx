@@ -11,23 +11,24 @@ import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 export function ProfilePage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const [history, setHistory] = useState<any[]>([]);
+  const [duels, setDuels] = useState<any[]>([]);
   const [displayName, setDisplayName] = useState('');
   const [streak, setStreak] = useState({ current: 0, best: 0 });
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 10;
 
-  const loadMore = async () => {
+  const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     if (user) {
       try {
-        const duels = await getUserDuels(user.id, page, 10);
-        if (duels.length < 10) setHasMore(false);
+        const results = await getUserDuels(user.id, page, PAGE_SIZE);
+        if (results.length < PAGE_SIZE) setHasMore(false);
 
-        const mapped = duels.map(d => ({
+        const mapped = results.map(d => ({
           id: d.id,
           createdAt: d.created_at,
           mode: d.mode,
@@ -41,19 +42,19 @@ export function ProfilePage() {
           weaknesses_of_loser: d.weaknesses_of_loser,
         }));
 
-        setHistory(prev => [...prev, ...mapped]);
+        setDuels(prev => [...prev, ...mapped]);
         setPage(prev => prev + 1);
       } catch {
-        if (page === 0) setHistory(getHistory());
+        if (page === 0) setDuels(getHistory());
         setHasMore(false);
       }
     } else {
-      if (page === 0) setHistory(getHistory());
+      if (page === 0) setDuels(getHistory());
       setHasMore(false);
     }
     setLoadingMore(false);
     setLoading(false);
-  };
+  }, [loadingMore, hasMore, page, user]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -73,33 +74,31 @@ export function ProfilePage() {
     loadProfile();
     
     // Reset and load duels when user changes
-    setHistory([]);
+    setDuels([]);
     setPage(0);
     setHasMore(true);
   }, [user]);
 
-  // Initial load of duels
+  // Initial load
   useEffect(() => {
-    if (page === 0 && hasMore && !loadingMore) {
-      loadMore();
-    }
-  }, [page, hasMore, loadingMore, user]);
+    loadMore();
+  }, [user]);
 
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
   const stats = useMemo(() => {
-    const total = history.length;
+    const total = duels.length;
     if (total === 0) return { total, avgScore: 0, bestScore: 0, favoriteMode: 'None', streak: 0 };
 
     const avgScore = Math.round(
-      history.reduce((sum, r) => sum + Math.max(r.scores?.A?.total ?? 0, r.scores?.B?.total ?? 0), 0) / total
+      duels.reduce((sum, r) => sum + Math.max(r.scores?.A?.total ?? 0, r.scores?.B?.total ?? 0), 0) / total
     );
 
     const bestScore = Math.max(
-      ...history.map(r => Math.max(r.scores?.A?.total ?? 0, r.scores?.B?.total ?? 0))
+      ...duels.map(r => Math.max(r.scores?.A?.total ?? 0, r.scores?.B?.total ?? 0))
     );
 
-    const modeCounts = history.reduce((acc, r) => {
+    const modeCounts = duels.reduce((acc, r) => {
       acc[r.mode] = (acc[r.mode] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -107,7 +106,7 @@ export function ProfilePage() {
     const favoriteMode = Object.entries(modeCounts).sort((a, b) => b[1] - a[1])[0][0];
 
     return { total, avgScore, bestScore, favoriteMode };
-  }, [history]);
+  }, [duels]);
 
   const handleViewDuel = (record: any) => {
     sessionStorage.setItem('vrsus_last_result', JSON.stringify({
@@ -227,14 +226,14 @@ export function ProfilePage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-display font-bold">Recent Duels</h2>
-              {history.length > 3 && (
+              {duels.length > 3 && (
                 <Link to="/history" className="flex items-center gap-1 text-sm text-neutral-400 hover:text-foreground transition-colors">
                   See all <ArrowRight size={14} />
                 </Link>
               )}
             </div>
 
-            {history.length === 0 ? (
+            {duels.length === 0 ? (
               <div className="bg-surface border border-border rounded-2xl p-12 text-center">
                 <Ghost size={36} className="text-neutral-600 mx-auto mb-3" />
                 <p className="text-neutral-400 font-medium">No duels yet</p>
@@ -247,7 +246,7 @@ export function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {history.map(record => (
+                {duels.map(record => (
                   <button
                     key={record.id}
                     onClick={() => handleViewDuel(record)}
