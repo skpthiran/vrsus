@@ -256,7 +256,8 @@ export function ProfilePage() {
                     <div className="flex -space-x-3 flex-shrink-0">
                       {[record.previewA, record.previewB].map((img, i) => (
                         <div key={i} className={cn(
-                          "w-12 h-12 rounded-xl overflow-hidden border-2 border-background bg-neutral-900",
+                          "w-12 h-12 rounded-xl overflow-hidden border-2 border-background",
+                          i === 0 ? "bg-gradient-to-br from-neutral-800 to-neutral-900" : "bg-gradient-to-br from-neutral-900 to-neutral-800",
                           i === 1 && "relative"
                         )}>
                           {img ? (
@@ -268,7 +269,11 @@ export function ProfilePage() {
                               decoding="async" 
                             />
                           ) : (
-                            <div className="w-full h-full bg-neutral-800" />
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="font-display font-black text-lg text-white/10 select-none">
+                                {i === 0 ? 'A' : 'B'}
+                              </span>
+                            </div>
                           )}
                         </div>
                       ))}

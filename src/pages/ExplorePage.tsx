@@ -179,6 +179,7 @@ export function ExplorePage() {
               <DuelCard 
                 duel={duel} 
                 onCardClick={handleCardClick}
+                showReactions={false}
               />
               <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black pointer-events-none text-white/50 tracking-tighter uppercase">
                 {new Date(duel.createdAt).toLocaleDateString() === new Date().toLocaleDateString() 

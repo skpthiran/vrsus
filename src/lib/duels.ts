@@ -45,7 +45,7 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, created_at, is_public, preview_a:image_a_url, preview_b:image_b_url, scores, verdict')
+    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, created_at, is_public, scores, verdict')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -62,7 +62,7 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, image_a_url, image_b_url, is_public, reasons_for_win, weaknesses_of_loser')
+    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, is_public, reasons_for_win, weaknesses_of_loser')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(from, to);

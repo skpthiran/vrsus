@@ -7,9 +7,10 @@ import { upsertReaction, getReactions, getComments, addComment, deleteComment } 
 interface DuelCardProps {
   duel: any;
   onCardClick?: (duel: any) => void;
+  showReactions?: boolean;
 }
 
-export function DuelCard({ duel, onCardClick }: DuelCardProps) {
+export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardProps) {
   const { user } = useAuth();
   const [reactions, setReactions] = useState({ agree: 0, disagree: 0, fire: 0, userReaction: null as string | null });
   const [showComments, setShowComments] = useState(false);
@@ -17,8 +18,8 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const isSeedDuel = duel.id?.startsWith('seed-');
-
   useEffect(() => {
+    if (!showReactions) return;
     if (isSeedDuel) {
       setReactions({ agree: 12, disagree: 3, fire: 28, userReaction: null });
       return;
@@ -30,7 +31,7 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
       const userReaction = user ? (data.find(r => r.user_id === user.id)?.reaction_type || null) : null;
       setReactions({ agree, disagree, fire, userReaction });
     });
-  }, [duel.id, user]);
+  }, [duel.id, user, showReactions]);
 
   const handleReaction = async (type: 'agree' | 'disagree' | 'fire') => {
     if (!user || isSeedDuel) return;
@@ -88,7 +89,7 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
       >
         {/* Photo A */}
         <div className="relative overflow-hidden">
-          <div className="w-full h-full bg-neutral-900 overflow-hidden">
+          <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 overflow-hidden flex items-center justify-center">
             {duel.imgA ? (
               <img 
                 src={duel.imgA} 
@@ -98,9 +99,7 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
                 decoding="async"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="font-display font-black text-4xl text-white/20">A</span>
-              </div>
+              <span className="font-display font-black text-4xl text-white/10 select-none">A</span>
             )}
           </div>
           <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
@@ -121,7 +120,7 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
 
         {/* Photo B */}
         <div className="relative overflow-hidden">
-          <div className="w-full h-full bg-neutral-900 overflow-hidden">
+          <div className="w-full h-full bg-gradient-to-br from-neutral-900 to-neutral-800 overflow-hidden flex items-center justify-center">
             {duel.imgB ? (
               <img 
                 src={duel.imgB} 
@@ -131,9 +130,7 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
                 decoding="async"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="font-display font-black text-4xl text-white/20">B</span>
-              </div>
+              <span className="font-display font-black text-4xl text-white/10 select-none">B</span>
             )}
           </div>
           <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">

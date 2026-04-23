@@ -253,17 +253,21 @@ function DuelCard({ record, onDelete, onTogglePrivacy, onClick }: {
 
       {/* Side by Side Preview */}
       <div className="grid grid-cols-2 gap-2 h-40">
-        <div className="rounded-2xl overflow-hidden relative bg-neutral-900 border border-white/5">
-          <img 
-            src={record.previewA} 
-            alt="A" 
-            className={cn(
-              "w-full h-full object-cover transition-opacity duration-300",
-              record.winner === 'B' ? "opacity-50" : "opacity-100"
-            )}
-            loading="lazy"
-            decoding="async"
-          />
+        <div className="rounded-2xl overflow-hidden relative bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/5 flex items-center justify-center">
+          {record.previewA ? (
+            <img 
+              src={record.previewA} 
+              alt="A" 
+              className={cn(
+                "w-full h-full object-cover transition-opacity duration-300",
+                record.winner === 'B' ? "opacity-50" : "opacity-100"
+              )}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <span className="font-display font-black text-2xl text-white/10 select-none">A</span>
+          )}
           <div className="absolute top-2 left-2 w-5 h-5 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10">A</div>
           {record.winner === 'A' && (
             <div className="absolute bottom-2 right-2 p-1 bg-winner rounded-full shadow-lg">
@@ -271,18 +275,22 @@ function DuelCard({ record, onDelete, onTogglePrivacy, onClick }: {
             </div>
           )}
         </div>
-        <div className="rounded-2xl overflow-hidden relative bg-neutral-900 border border-white/5">
-          <img 
-            src={record.previewB} 
-            alt="B" 
-            className={cn(
-              "w-full h-full object-cover transition-opacity duration-300",
-              record.winner === 'A' ? "opacity-50" : "opacity-100"
-            )}
-            loading="lazy"
-            decoding="async"
-          />
-          <div className="absolute top-2 left-2 w-5 h-5 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10">B</div>
+        <div className="rounded-2xl overflow-hidden relative bg-gradient-to-br from-neutral-900 to-neutral-800 border border-white/5 flex items-center justify-center">
+          {record.previewB ? (
+            <img 
+              src={record.previewB} 
+              alt="B" 
+              className={cn(
+                "w-full h-full object-cover transition-opacity duration-300",
+                record.winner === 'A' ? "opacity-50" : "opacity-100"
+              )}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <span className="font-display font-black text-2xl text-white/10 select-none">B</span>
+          )}
+          <div className="absolute top-2 right-2 w-5 h-5 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10">B</div>
           {record.winner === 'B' && (
             <div className="absolute bottom-2 right-2 p-1 bg-winner rounded-full shadow-lg">
               <Trophy size={10} className="text-black" />
