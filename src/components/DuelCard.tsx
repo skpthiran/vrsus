@@ -62,7 +62,8 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
     if (!user || !newComment.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const comment = await addComment(duel.id, user.id, newComment.trim());
+      const displayName = user.email?.split('@')[0] || 'User';
+      const comment = await addComment(duel.id, user.id, newComment.trim(), displayName);
       setComments(prev => [...prev, comment]);
       setNewComment('');
     } catch (err) {
@@ -193,13 +194,13 @@ export function DuelCard({ duel, onCardClick }: DuelCardProps) {
                 <div key={comment.id} className="flex items-start gap-2">
                   <div className="w-7 h-7 rounded-full bg-accent/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-xs font-bold text-accent">
-                      {(comment.profiles?.display_name || 'U')[0].toUpperCase()}
+                      {(comment.display_name || 'U')[0].toUpperCase()}
                     </span>
                   </div>
                   <div className="flex-1 bg-background rounded-xl px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-neutral-300">
-                        {comment.profiles?.display_name || 'User'}
+                        {comment.display_name || 'User'}
                       </span>
                       {user && comment.user_id === user.id && (
                         <button onClick={() => handleDeleteComment(comment.id)} className="text-neutral-600 hover:text-red-400 transition-colors">

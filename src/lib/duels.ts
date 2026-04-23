@@ -105,17 +105,17 @@ export async function getReactions(duelId: string) {
 export async function getComments(duelId: string) {
   const { data } = await supabase
     .from('comments')
-    .select('id, content, created_at, user_id, profiles!comments_user_id_fkey(display_name)')
+    .select('id, content, created_at, user_id, display_name')
     .eq('duel_id', duelId)
     .order('created_at', { ascending: true });
   return data || [];
 }
 
-export async function addComment(duelId: string, userId: string, content: string) {
+export async function addComment(duelId: string, userId: string, content: string, displayName: string) {
   const { data, error } = await supabase
     .from('comments')
-    .insert({ duel_id: duelId, user_id: userId, content })
-    .select('id, content, created_at, user_id, profiles!comments_user_id_fkey(display_name)')
+    .insert({ duel_id: duelId, user_id: userId, content, display_name: displayName })
+    .select('id, content, created_at, user_id, display_name')
     .single();
   if (error) throw error;
   return data;
