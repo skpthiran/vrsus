@@ -65,5 +65,9 @@
   .tilted-hero:hover {
     transform: rotateX(5deg) rotateY(-2deg) scale(1);
   }
+
+  .ring-winner {
+    --tw-ring-color: #fbbf24;
+  }
 }
 

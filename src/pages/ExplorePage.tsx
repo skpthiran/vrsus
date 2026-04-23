@@ -135,32 +135,83 @@ export function ExplorePage() {
                 <div key={duel.id} className="bg-surface border border-border rounded-[2rem] overflow-hidden group">
                   {/* Photo grid */}
                   <div
-                    className={cn("grid grid-cols-2 aspect-[4/3] md:aspect-[16/9] relative", duel.isOwn && "cursor-pointer")}
+                    className={cn("grid grid-cols-2 relative", duel.isOwn && "cursor-pointer")}
+                    style={{ aspectRatio: '4/3' }}
                     onClick={() => handleCardClick(duel)}
                   >
-                    <img src={duel.imgA} alt="A" className={cn("w-full h-full object-cover", duel.winner === 'B' ? "opacity-60 grayscale-[30%]" : "")} />
-                    <img src={duel.imgB} alt="B" className={cn("w-full h-full object-cover", duel.winner === 'A' ? "opacity-60 grayscale-[30%]" : "")} />
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent flex flex-col justify-end p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-semibold px-2 py-1 bg-white/20 backdrop-blur-md rounded-md text-white shadow-lg">{duel.mode}</span>
-                            {duel.isOwn && <span className="text-xs font-bold px-2 py-1 bg-accent/80 backdrop-blur-md rounded-md text-white">YOUR DUEL</span>}
-                          </div>
-                          <p className="text-white font-medium max-w-md hidden md:block">"{duel.reason}"</p>
-                        </div>
-                        {duel.isOwn && (
-                          <Button className="bg-white/20 hover:bg-white backdrop-blur-md text-white hover:text-black border border-white/20 transition-all font-semibold rounded-full px-6 py-2">
-                            View Duel
-                          </Button>
-                        )}
+                    {/* Photo A */}
+                    <div className="relative overflow-hidden">
+                      <img 
+                        src={duel.imgA} 
+                        alt="A" 
+                        className={cn(
+                          "w-full h-full object-cover",
+                          duel.winner === 'B' ? "opacity-50 grayscale-[40%]" : ""
+                        )} 
+                      />
+                      {/* A label */}
+                      <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
+                        <span className="text-xs font-black text-white">A</span>
                       </div>
+                      {/* Winner crown on A */}
+                      {duel.winner === 'A' && (
+                        <>
+                          <div className="absolute inset-0 ring-4 ring-winner ring-inset" />
+                          <div className="absolute top-2 right-2 bg-winner text-black text-xs font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                            👑 WIN
+                          </div>
+                          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-winner font-black text-lg px-2 py-0.5 rounded-lg">
+                            {duel.aScore}
+                          </div>
+                        </>
+                      )}
+                      {duel.winner === 'B' && (
+                        <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white/60 font-bold text-lg px-2 py-0.5 rounded-lg">
+                          {duel.aScore}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 backdrop-blur-md border border-white/20 rounded-full flex justify-center items-center">
-                      <span className="font-display font-bold text-white text-sm">VS</span>
+                    {/* Photo B */}
+                    <div className="relative overflow-hidden">
+                      <img 
+                        src={duel.imgB} 
+                        alt="B" 
+                        className={cn(
+                          "w-full h-full object-cover",
+                          duel.winner === 'A' ? "opacity-50 grayscale-[40%]" : ""
+                        )} 
+                      />
+                      {/* B label */}
+                      <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
+                        <span className="text-xs font-black text-white">B</span>
+                      </div>
+                      {/* Winner crown on B */}
+                      {duel.winner === 'B' && (
+                        <>
+                          <div className="absolute inset-0 ring-4 ring-winner ring-inset" />
+                          <div className="absolute top-2 left-2 bg-winner text-black text-xs font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                            👑 WIN
+                          </div>
+                          <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-winner font-black text-lg px-2 py-0.5 rounded-lg">
+                            {duel.bScore}
+                          </div>
+                        </>
+                      )}
+                      {duel.winner === 'A' && (
+                        <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white/60 font-bold text-lg px-2 py-0.5 rounded-lg">
+                          {duel.bScore}
+                        </div>
+                      )}
                     </div>
+
+                    {/* VS badge */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-black/70 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center z-10">
+                      <span className="font-display font-black text-white text-xs">VS</span>
+                    </div>
+
+                    {/* Bottom gradient overlay */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
                   </div>
 
                   {/* Reactions footer */}
