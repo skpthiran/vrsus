@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UploadCloud, Image as ImageIcon, X, Zap, Loader2 } from 'lucide-react';
+import { analyzePhotos } from '../lib/api';
+
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
 import { saveToHistory } from '../lib/history';
@@ -64,23 +66,8 @@ export function CreateDuelPage() {
     try {
       if (!slotA.file || !slotB.file) throw new Error('Files missing');
 
-      const response = await fetch('http://localhost:3001/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photoA: slotA.base64,
-          photoB: slotB.base64,
-          mode: mode,
-        }),
-      });
+      const result = await analyzePhotos(slotA.base64!, slotB.base64!, mode);
 
-      if (!response.ok) {
-        throw new Error('Analysis failed');
-      }
-
-      const result = await response.json();
       
       // Convert files to full data URLs for history (persistence)
       const toDataURL = (file: File): Promise<string> => {
