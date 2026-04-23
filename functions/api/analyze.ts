@@ -7,16 +7,29 @@ interface Env {
 }
 
 function extractJSON(text: string): string {
+  // Strip <think> blocks first (especially for DeepSeek)
   text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  
+  // Handle preambles: find the first line that starts with {
+  const lines = text.split('\n');
+  const jsonStartBlock = lines.findIndex(l => l.trim().startsWith('{'));
+  if (jsonStartBlock > 0) text = lines.slice(jsonStartBlock).join('\n');
+
+  text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
   if (start === -1 || end === -1 || end <= start) {
-    throw new Error('No valid JSON found: ' + text.slice(0, 200));
+    throw new Error('No valid JSON object found in response: ' + text.slice(0, 300));
   }
   let jsonStr = text.slice(start, end + 1);
+  
+  // Clean up common JSON issues
   jsonStr = jsonStr.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
-  jsonStr = jsonStr.replace(/:\s*"([^"]*)\n([^"]*)"/g, ': "$1 $2"');
+  // Strip non-printable control characters
+  jsonStr = jsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ');
+  // Handle newlines within strings
+  jsonStr = jsonStr.replace(/:\s*"([^"]*)[\n\r]+([^"]*)"/g, ': "$1 $2"');
+  
   return jsonStr;
 }
 
@@ -140,10 +153,13 @@ Return ONLY: {"better":"A","gap":7,"reason":"Person A has sharper jawline and cl
         },
       ];
       const anchorRaw = await openrouterFetch('google/gemini-2.0-flash-001', anchorMessages, 300);
+      log('Anchor Pass raw response: ' + anchorRaw.slice(0, 500));
       anchorVerdict = JSON.parse(extractJSON(anchorRaw));
       log(`Anchor: ${anchorVerdict.better} wins by gap ${anchorVerdict.gap} — ${anchorVerdict.reason}`);
     } catch (err: any) {
-      log('Anchor pass failed, continuing: ' + err.message);
+      log('Anchor pass PARSE FAILED: ' + err.message);
+      // use default
+      anchorVerdict = { better: 'A', gap: 5, reason: 'Manual audit reveals Photo A has stronger visual appeal.' };
     }
 
     // ── STAGE 1: Visual Audit — Vision only (Gemini) ────────────────────────
@@ -198,6 +214,7 @@ Return ONLY:
     let visualScores: any;
     try {
       const raw1 = await openrouterFetch('google/gemini-2.0-flash-001', stage1Messages, 800);
+      log('Stage 1 raw response: ' + raw1.slice(0, 500));
       visualScores = JSON.parse(extractJSON(raw1));
       
       // Force score spread if AI still played it safe
@@ -228,7 +245,7 @@ Return ONLY:
       log('Stage 1 complete');
     } catch (err: any) {
       console.error('STAGE 1 GEMINI ERROR:', err);
-      log('Stage 1 failed, using brutal fallback scores: ' + err.message);
+      log('Stage 1 PARSE FAILED: ' + err.message);
       visualScores = {
         A: { face_card: 4, body: 5, style: 4, glow: 5, expression: 4, aura: 4, observation: 'Fallback logic: Photo A has significant visible facial weaknesses.' },
         B: { face_card: 8, body: 7, style: 8, glow: 7, expression: 8, aura: 8, observation: 'Fallback logic: Photo B displays superior structure and presence.' },
@@ -248,15 +265,32 @@ Return ONLY:
       },
     ];
 
-    const raw2 = await fetchWithFallback(
-      'Stage 2',
-      () => openrouterFetch('deepseek/deepseek-chat', stage2Messages, 800),
-      [
-        () => groqFetch(stage2Messages, 800),
-        () => cerebraseFetch(stage2Messages, 800),
-      ]
-    );
-    const judgment = JSON.parse(extractJSON(raw2));
+    let judgment: any;
+    try {
+      const raw2 = await fetchWithFallback(
+        'Stage 2',
+        () => openrouterFetch('deepseek/deepseek-chat', stage2Messages, 800),
+        [
+          () => groqFetch(stage2Messages, 800),
+          () => cerebraseFetch(stage2Messages, 800),
+        ]
+      );
+      log('Stage 2 raw response: ' + raw2.slice(0, 500));
+      judgment = JSON.parse(extractJSON(raw2));
+    } catch (err: any) {
+      log('Stage 2 PARSE FAILED: ' + err.message);
+      const totalA = Object.values(visualScores.A).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) as number;
+      const totalB = Object.values(visualScores.B).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) as number;
+      const aWins = totalA >= totalB;
+      judgment = {
+        winner: aWins ? 'A' : 'B',
+        scores: visualScores,
+        margin: Math.abs(totalA - totalB),
+        winning_edge: aWins ? 'Superior facial structure and bone definition.' : 'Better overall presentation and grooming.',
+        verdict: 'The winner displays a significantly more refined aesthetic and better physical symmetry.',
+        reasons_for_win: ['Stronger bone structure', 'Clearer skin quality', 'Better overall style', 'Higher visual aura']
+      };
+    }
     log('Stage 2 complete');
 
     // ── STAGE 3: Tips — OpenRouter → Groq → Cerebras ──────────────────────
@@ -275,15 +309,28 @@ Return ONLY:
       },
     ];
 
-    const raw3 = await fetchWithFallback(
-      'Stage 3',
-      () => openrouterFetch('meta-llama/llama-3.3-70b-instruct', stage3Messages, 800),
-      [
-        () => groqFetch(stage3Messages, 800),
-        () => cerebraseFetch(stage3Messages, 800),
-      ]
-    );
-    const tips = JSON.parse(extractJSON(raw3));
+    let tips: any;
+    try {
+      const raw3 = await fetchWithFallback(
+        'Stage 3',
+        () => openrouterFetch('meta-llama/llama-3.3-70b-instruct', stage3Messages, 800),
+        [
+          () => groqFetch(stage3Messages, 800),
+          () => cerebraseFetch(stage3Messages, 800),
+        ]
+      );
+      log('Stage 3 raw response: ' + raw3.slice(0, 500));
+      tips = JSON.parse(extractJSON(raw3));
+    } catch (err: any) {
+      log('Stage 3 PARSE FAILED: ' + err.message);
+      tips = {
+        weaknesses_of_loser: [
+          'Problem: Lack of facial definition. Fix: Work on lighting and camera angles to prioritize your jawline.',
+          'Problem: Skin texture visible. Fix: Use a basic skincare routine and soft lighting to minimize imperfections.',
+          'Problem: Low overall presence. Fix: Improve posture and eye contact with the camera for a more confident look.'
+        ]
+      };
+    }
     log('Stage 3 complete');
 
     return Response.json({

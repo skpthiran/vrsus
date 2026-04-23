@@ -6,6 +6,9 @@ export async function analyzePhotos(photoA: string, photoB: string, mode: string
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ photoA, photoB, mode }),
   });
-  if (!res.ok) throw new Error('Analysis failed');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || body.error || 'Analysis failed');
+  }
   return res.json();
 }
