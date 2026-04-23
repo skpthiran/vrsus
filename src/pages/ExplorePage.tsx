@@ -38,6 +38,7 @@ export function ExplorePage() {
           imgB: d.image_b_url,
           reason: d.summary,
           isOwn: false,
+          createdAt: d.created_at,
         })));
         
         setLeaderboard(leaderboardData);
@@ -160,11 +161,17 @@ export function ExplorePage() {
           </div>
         ) : (
           dbDuels.map((duel) => (
-            <DuelCard 
-              key={duel.id} 
-              duel={duel} 
-              onCardClick={handleCardClick}
-            />
+            <div key={duel.id} className="relative">
+              <DuelCard 
+                duel={duel} 
+                onCardClick={handleCardClick}
+              />
+              <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black pointer-events-none text-white/50 tracking-tighter uppercase">
+                {new Date(duel.createdAt).toLocaleDateString() === new Date().toLocaleDateString() 
+                  ? 'Today' 
+                  : new Date(duel.createdAt).toLocaleDateString()}
+              </div>
+            </div>
           ))
         )}
         <div className="h-4" />
