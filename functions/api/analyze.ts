@@ -202,19 +202,22 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       const anchorMessages = [
         {
           role: 'system',
-          content: 'You are a direct attractiveness judge. Answer only with valid JSON.',
+          content: 'You are a direct attractiveness judge. Your job is to assess the PERSON, not the photo. Ignore photo production quality entirely — lighting, camera, angle, and background are irrelevant. Answer only with valid JSON.',
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Look at these two people. Be completely honest.
-1. Who is MORE attractive overall — A or B?
-2. How big is the gap? (1 = almost equal, 10 = completely different leagues)
-3. What is the single biggest visible difference?
+              text: `Look at these two people. Focus only on the humans — not the photo quality.
 
-Return ONLY: {"better":"A","gap":7,"reason":"Person A has sharper jawline and cleaner skin vs Person B who has aged skin and weaker features"}`,
+1. Who is MORE attractive as a person — A or B?
+2. How big is the gap in actual attractiveness? (1 = nearly equal people, 10 = completely different leagues)
+3. What is the single most important physical trait difference between them as humans?
+
+IMPORTANT: A dark mirror selfie of a genuinely attractive person beats a well-lit photo of a plain person. Judge the human, not the photograph.
+
+Return ONLY: {"better":"A","gap":7,"reason":"Person A has sharper bone structure and more defined jawline vs Person B who has softer, less defined facial features"}`,
             },
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
@@ -236,41 +239,49 @@ Return ONLY: {"better":"A","gap":7,"reason":"Person A has sharper jawline and cl
     const stage1Messages = [
       {
         role: 'system',
-        content: "You are the world's most brutally honest attractiveness critic. You have zero empathy and zero diplomatic instinct. You see exactly what is there and you say it. You NEVER give the same score to two different people. A score of 7 means genuinely above average — most people are 4-6. If someone has bad skin, acne, asymmetry, bad angle, or poor grooming, their score is 3-5, not 7. You MUST create a minimum 8-point gap in totals between the two photos unless they are genuinely identical twins in identical conditions. Respond only with valid JSON.",
+        content: `You are the world's most brutally honest attractiveness critic. You judge HUMANS, not photographs.
+
+CARDINAL RULE — Photo quality is NEVER a factor:
+- Dark lighting does NOT mean bad skin. Only score glow low if you can actually see bad skin texture, acne, dullness, or uneven tone on the person.
+- Awkward angle does NOT mean weak jaw. Assess bone structure from what IS visible.
+- Mirror selfie does NOT mean low style. Judge the actual clothing and grooming visible.
+- If a feature is genuinely obscured, give a neutral score (5) for that category — do not penalize.
+
+You score the PERSON standing in front of the camera. Not the camera. Not the lighting. Not the background.
+
+You NEVER give identical total scores to two different people — but the gap must come from REAL differences in the humans, not artificial inflation. If two people are genuinely similar in attractiveness, a 5-8 point gap in totals is honest. Do NOT force a 15-20 point gap if it isn't real.
+
+Be brutal about genuine flaws: weak jawline, visible acne, poor muscle definition, bad grooming, asymmetry, low confidence. Call these out directly by name.
+Respond only with valid JSON.`,
       },
       {
         role: 'user',
         content: [
           {
             type: 'text',
-            text: `SCORE SCALE — this is law:
-- 1-2: Severely unattractive. Extreme skin issues, very weak bone structure, bad hygiene visible.
-- 3-4: Ugly. Clearly below average. Bad skin texture, weak jaw, poor grooming, nothing redeemable about the photo.
-- 5: Plain. Forgettable. Average at best.
-- 6: Slightly above average. One or two decent features.
-- 7: Noticeably attractive. Clear strengths. Above average face.
-- 8: Hot. Turns heads. Strong bone structure, clear skin, presence.
-- 9-10: Model tier. Reserved for genuinely exceptional genetics.
+            text: `Score each person independently — imagine you are only looking at one person at a time.
 
-MANDATORY RULES:
-- Bad skin (acne, texture, uneven tone, dullness) = glow score of 3-4 MAXIMUM.
-- Weak jawline, asymmetry, droopy features = face_card of 3-5.
-- Unflattering angle or bad lighting that reveals flaws = do NOT compensate — score what you see.
-- Totals MUST differ by at least 10 points. If they don't, you have failed.
-- Write the observation brutally: name the specific flaw (e.g. "severe skin texture, weak chin, no jawline definition") and the specific strength.
+SCORING SCALE (apply to each person alone, not relative to the other):
+- 1-2: Severely unattractive. Major genetic issues, extreme skin problems, no redeemable features.
+- 3-4: Clearly below average. Weak bone structure, poor skin, bad grooming, forgettable face.
+- 5: Average. Nothing notably good or bad. Forgettable.
+- 6: Slightly above average. One or two genuinely good features.
+- 7: Noticeably attractive. Clear strengths, above average genetics.
+- 8: Legitimately hot. Strong bone structure, clear skin, commanding presence.
+- 9-10: Model tier. Reserved for elite genetics only.
 
-Criteria (score 1–10):
-- face_card: Bone structure, jawline, symmetry, eyes, nose
-- body: Physique, build, posture — only score what's visible
-- style: Outfit, grooming, presentation
-- glow: Skin clarity, hair quality, freshness
-- expression: Charisma, confidence, energy
-- aura: Would a stranger look twice?
+WHAT TO SCORE (the person, not the photo):
+- face_card: Bone structure, jawline definition, symmetry, eyes, nose shape — based on actual facial anatomy visible, not photo angle
+- body: Actual physique — muscle definition, body fat, proportions. A shredded physique in bad lighting still scores 8-9. A skinny-fat person in great lighting still scores 3-4.
+- style: Clothing fit, grooming quality, hairstyle — what the person chose to wear and how they present themselves
+- glow: Actual skin quality visible — score 3-4 only if you can clearly see acne, severe texture, dullness. If lighting is bad but no obvious skin issues are visible, score 5-6.
+- expression: Confidence, energy, charisma, eye contact
+- aura: Overall magnetism — would a stranger look twice at this person specifically?
 
-observation: Name the biggest strength AND biggest weakness honestly.
+observation: One sentence naming the strongest physical trait AND one sentence naming the biggest genuine weakness of the person (not the photo).
 
 Return ONLY:
-{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"..."}}`,
+{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"Strength: X. Weakness: Y."},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"Strength: X. Weakness: Y."}}`,
           },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoA}` } },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoB}` } },
@@ -338,11 +349,11 @@ Return ONLY:
     const stage2Messages = [
       {
         role: 'system',
-        content: 'You are a savage judge. The winner wins because they are objectively better looking. The loser loses because they are objectively worse. Your verdict must name the specific physical flaws of the loser (bad skin, weak features, bad shape, etc). Never use the phrases "default superiority", "anchor context", "aligns with", or "distinguishing factor". Respond only with valid JSON.',
+        content: `You are a savage but accurate judge. You write verdicts based on the OBSERVATION text and scores provided — these describe real physical traits of the people, not photo quality. Your verdict must reference the actual human traits named in the observations. Never invent flaws that aren't in the observation. Never use the phrases "default superiority", "anchor context", "aligns with", or "distinguishing factor". Respond only with valid JSON.`,
       },
       {
         role: 'user',
-        content: `Given these attractiveness scores for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence naming the exact deciding factor\n- verdict: 2-3 sentences. State BLUNTLY why the winner is better and what specifically is wrong with the loser. Use words like "significantly weaker", "drags the score down", "no competition". Your verdict must reference physical flaws visible in the scores. If reasons_for_win contain the words 'default', 'anchor', 'aligns', or 'distinguishing factor', you have failed. The reasons must reference actual physical attributes visible in the scores — face structure, skin, body, style, energy.\n- reasons_for_win: 4 bullet-point reasons the winner is better\n\nReturn ONLY this JSON:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict on why winner won and loser lost.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+        content: `Given these attractiveness scores and observations for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence referencing the actual physical trait that decided it (use the observation text)\n- verdict: 2-3 sentences. State BLUNTLY why the winner is better and what specifically is wrong with the loser. Reference the actual traits named in the observations — bone structure, skin, muscle, grooming. Do NOT reference photo quality, lighting, or angles.\n- reasons_for_win: 4 specific reasons the winner's PHYSICAL traits beat the loser's — reference what the observations actually say\n\nReturn ONLY:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"2-3 sentence brutal verdict referencing actual physical traits.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
     ];
 
