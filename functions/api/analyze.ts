@@ -39,6 +39,48 @@ function extractJSON(text: string): string {
   return jsonStr;
 }
 
+async function uploadImageToStorage(
+  supabase: any,
+  base64Data: string,
+  fileName: string
+): Promise<string | null> {
+  try {
+    // Strip data URI prefix if present
+    const base64 = base64Data.startsWith('data:')
+      ? base64Data.split(',')[1]
+      : base64Data;
+    
+    // Convert base64 to binary
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    
+    const { data, error } = await supabase.storage
+      .from('duel-images')
+      .upload(fileName, bytes, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      });
+    
+    if (error) {
+      console.error('[VRSUS] Image upload error:', error.message);
+      return null;
+    }
+    
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('duel-images')
+      .getPublicUrl(data.path);
+    
+    return urlData.publicUrl;
+  } catch (err: any) {
+    console.error('[VRSUS] Image upload crashed:', err.message);
+    return null;
+  }
+}
+
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
@@ -369,6 +411,21 @@ Return ONLY:
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
         
+        const timestamp = Date.now();
+        const imageAUrl = await uploadImageToStorage(
+          supabase,
+          photoA,
+          `${timestamp}_a_${crypto.randomUUID()}.jpg`
+        );
+        const imageBUrl = await uploadImageToStorage(
+          supabase,
+          photoB,
+          `${timestamp}_b_${crypto.randomUUID()}.jpg`
+        );
+
+        console.log('[VRSUS] Image A URL:', imageAUrl);
+        console.log('[VRSUS] Image B URL:', imageBUrl);
+
         const duelPayload = {
           user_id: userId || null,
           mode: mode || 'general',
@@ -381,8 +438,8 @@ Return ONLY:
           scores: typeof judgment.scores === 'string' ? judgment.scores : JSON.stringify(judgment.scores),
           reasons_for_win: typeof judgment.reasons_for_win === 'string' ? judgment.reasons_for_win : JSON.stringify(judgment.reasons_for_win),
           weaknesses_of_loser: typeof tips.weaknesses_of_loser === 'string' ? tips.weaknesses_of_loser : JSON.stringify(tips.weaknesses_of_loser),
-          image_a_url: photoA.startsWith('data:') ? photoA : `data:image/jpeg;base64,${photoA}`,
-          image_b_url: photoB.startsWith('data:') ? photoB : `data:image/jpeg;base64,${photoB}`,
+          image_a_url: imageAUrl || (photoA.startsWith('data:') ? photoA : `data:image/jpeg;base64,${photoA}`),
+          image_b_url: imageBUrl || (photoB.startsWith('data:') ? photoB : `data:image/jpeg;base64,${photoB}`),
           is_public: true,
           challenge_of: challengeOf || null,
           defenses: 0,
