@@ -38,18 +38,21 @@ function extractJSON(text: string): string {
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
+  const { request, env } = context;
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  const openrouterKey = context.env.OPENROUTER_API_KEY;
-  const groqKey = context.env.GROQ_API_KEY;
-  const cerebrasKey = context.env.CEREBRAS_API_KEY;
+  const supabaseUrl = env.SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_ANON_KEY;
+  const openrouterKey = env.OPENROUTER_API_KEY;
+  const groqKey = env.GROQ_API_KEY;
+  const cerebrasKey = env.CEREBRAS_API_KEY;
 
   try {
-    const body = await context.request.json() as any;
+    const body = await request.json() as any;
     const { photoA, photoB, mode = 'general', userId, challengeOf } = body;
 
     if (!photoA || !photoB) {
@@ -343,37 +346,40 @@ Return ONLY:
     // resilient server-side save
     let savedId = null;
     try {
-      const supabaseUrl = context.env.SUPABASE_URL;
-      const supabaseKey = context.env.SUPABASE_ANON_KEY;
-      
       if (!supabaseUrl || !supabaseKey) {
         console.error('[VRSUS] Missing Supabase env vars');
       } else {
         const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const duelPayload = {
+          user_id: userId || null,
+          mode,
+          winner: judgment.winner,
+          margin: judgment.margin,
+          summary: judgment.winning_edge,
+          score_a: judgment.scores.A.total,
+          score_b: judgment.scores.B.total,
+          scores: judgment.scores,
+          reasons_for_win: judgment.reasons_for_win,
+          weaknesses_of_loser: tips.weaknesses_of_loser,
+          verdict: judgment.verdict,
+          image_a_url: `data:image/jpeg;base64,${photoA}`,
+          image_b_url: `data:image/jpeg;base64,${photoB}`,
+          challenge_of: challengeOf || null,
+          is_public: true,
+        };
+
         const { data: savedDuel, error: saveError } = await supabase
           .from('duels')
-          .insert({
-            user_id: userId || null,
-            mode,
-            winner: judgment.winner,
-            margin: judgment.margin,
-            summary: judgment.winning_edge,
-            scores: judgment.scores,
-            reasons_for_win: judgment.reasons_for_win,
-            weaknesses_of_loser: tips.weaknesses_of_loser,
-            verdict: judgment.verdict,
-            image_a_url: `data:image/jpeg;base64,${photoA}`,
-            image_b_url: `data:image/jpeg;base64,${photoB}`,
-            challenge_of: challengeOf || null,
-            is_public: true,
-          })
-          .select()
+          .insert(duelPayload)
+          .select('id')
           .single();
-
+        
         if (saveError) {
-          console.error('[VRSUS] Duel save failed:', saveError.message);
+          console.error('[VRSUS] Duel save failed:', saveError.message, saveError.details);
         } else if (savedDuel) {
           savedId = savedDuel.id;
+          console.log('[VRSUS] Duel saved:', savedId);
           
           // If this was a challenge, increment the defenses of the original champion
           if (challengeOf) {
