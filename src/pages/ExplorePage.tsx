@@ -72,7 +72,21 @@ export function ExplorePage() {
 
 
   React.useEffect(() => {
-    loadMore();
+    pageRef.current = 0;
+    setDuels([]);
+    setHasMore(true);
+    // Call directly without the loadingMore guard for initial load
+    getPublicDuels(0, PAGE_SIZE).then(async (next) => {
+      if (next.length < PAGE_SIZE) setHasMore(false);
+      setDuels(next.map(d => ({ ...d, mode: d.mode ? d.mode.charAt(0).toUpperCase() + d.mode.slice(1) : 'General', isOwn: false })));
+      pageRef.current = 1;
+      const voteMap = await getBatchVoteCounts(next.map(d => d.id));
+      setVotes(voteMap);
+      setLoading(false);
+    }).catch(err => {
+      console.error('[Explore] initial load failed:', err);
+      setLoading(false);
+    });
   }, []);
 
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
@@ -107,8 +121,11 @@ export function ExplorePage() {
               key={cat.id}
               onClick={() => {
                 setActiveCategory(cat.id);
-                if (cat.id === 'leaderboard') {
-                  setPage(0);
+                if (cat.id !== 'leaderboard' && activeCategory === 'leaderboard') {
+                  // switching back from leaderboard to feed — reset and reload
+                  pageRef.current = 0;
+                  setDuels([]);
+                  setHasMore(true);
                 }
               }}
               className={cn(
