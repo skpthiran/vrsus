@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trophy, Share2, Download, Copy, RefreshCw, CheckCircle2, ArrowUpRight, Loader2 } from 'lucide-react';
+import { Trophy, Share2, Download, Copy, RefreshCw, CheckCircle2, ArrowUpRight, Loader2, Info } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
@@ -10,7 +10,10 @@ import { getDuelById } from '../lib/duels';
 export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = React.useNavigate();
+  const location = useLocation();
   const shareCardRef = React.useRef<HTMLDivElement>(null);
+  
+  const userPrediction = location.state?.userPrediction as 'A' | 'B' | null;
   
   const [result, setResult] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
@@ -128,6 +131,22 @@ export function ResultsPage() {
           </motion.h1>
           <p className="text-neutral-400 text-lg">AI has determined the stronger visual impression.</p>
        </div>
+
+       {userPrediction && result && (
+         <div className="max-w-4xl mx-auto mb-8">
+           {userPrediction === result.winner ? (
+             <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-center gap-3 text-green-400">
+               <CheckCircle2 size={20} />
+               <span className="font-bold">You called it! 🎯 Your prediction matched the AI.</span>
+             </div>
+           ) : (
+             <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex items-center gap-3 text-orange-400">
+               <Info size={20} className="text-orange-400" />
+               <span className="font-bold">AI surprised you 😮 It picked {result.winner} instead.</span>
+             </div>
+           )}
+         </div>
+       )}
 
        {/* Hero Result Grid */}
        <div className="grid md:grid-cols-2 gap-6 md:gap-16 relative mb-16">

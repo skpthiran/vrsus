@@ -8,9 +8,19 @@ interface DuelCardProps {
   duel: any;
   onCardClick?: (duel: any) => void;
   showReactions?: boolean;
+  voteCounts?: { a: number; b: number; userPick: 'A' | 'B' | null };
+  onVote?: (pick: 'A' | 'B') => void;
+  showVoting?: boolean;
 }
 
-export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardProps) {
+export function DuelCard({ 
+  duel, 
+  onCardClick, 
+  showReactions = true,
+  voteCounts,
+  onVote,
+  showVoting = false
+}: DuelCardProps) {
   const { user } = useAuth();
   const imgRef = React.useRef<HTMLDivElement>(null);
   const [visible, setVisible] = React.useState(false);
@@ -192,6 +202,44 @@ export function DuelCard({ duel, onCardClick, showReactions = true }: DuelCardPr
           )}
         </div>
       </div>
+
+      {showVoting && (
+        <div className="px-4 pb-3">
+          {!voteCounts?.userPick ? (
+            // Before voting — show the question
+            <div className="flex items-center gap-2">
+              <span className="text-white/50 text-xs font-semibold">WHO WINS?</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onVote?.('A'); }}
+                className="flex-1 py-2 rounded-xl bg-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all active:scale-95"
+              >
+                A
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onVote?.('B'); }}
+                className="flex-1 py-2 rounded-xl bg-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all active:scale-95"
+              >
+                B
+              </button>
+            </div>
+          ) : (
+            // After voting — show % bar and AI vs People
+            <div className="space-y-2">
+              <div className="flex rounded-full overflow-hidden h-2">
+                <div
+                  className="bg-white/60 transition-all duration-500"
+                  style={{ width: `${voteCounts.a + voteCounts.b === 0 ? 50 : Math.round(voteCounts.a / (voteCounts.a + voteCounts.b) * 100)}%` }}
+                />
+                <div className="bg-accent flex-1" />
+              </div>
+              <div className="flex justify-between text-xs text-white/50">
+                <span>A {voteCounts.a + voteCounts.b === 0 ? 50 : Math.round(voteCounts.a / (voteCounts.a + voteCounts.b) * 100)}%</span>
+                <span>B {voteCounts.a + voteCounts.b === 0 ? 50 : Math.round(voteCounts.b / (voteCounts.a + voteCounts.b) * 100)}%</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Reactions footer */}
       <div className="px-4 py-3 flex items-center justify-between border-t border-border">

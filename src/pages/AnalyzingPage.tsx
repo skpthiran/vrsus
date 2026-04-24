@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { analyzePhotos } from '../lib/api';
@@ -15,6 +15,14 @@ export function AnalyzingPage() {
     previewA: null,
     previewB: null
   });
+  const [userPrediction, setUserPrediction] = useState<'A' | 'B' | null>(null);
+  const [predictionLocked, setPredictionLocked] = useState(false);
+  const predictionRef = useRef<'A' | 'B' | null>(null);
+
+  useEffect(() => {
+    predictionRef.current = userPrediction;
+  }, [userPrediction]);
+
 
   const steps = [
     "Reading image quality...",
@@ -92,7 +100,7 @@ export function AnalyzingPage() {
 
         // Give the animation a tiny bit more time if it was too fast
         setTimeout(() => {
-          navigate(`/results/${dbId}`);
+          navigate(`/results/${dbId}`, { state: { userPrediction: predictionRef.current } });
         }, 800);
       })
       .catch(err => {
@@ -102,6 +110,29 @@ export function AnalyzingPage() {
 
     return () => clearInterval(stepTimer);
   }, [navigate, user]);
+
+  if (!predictionLocked) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-6">
+        <p className="text-white/60 text-sm font-semibold tracking-widest uppercase">AI is deciding...</p>
+        <h2 className="font-display font-black text-4xl text-white text-center">Who do YOU think wins?</h2>
+        <div className="flex gap-4 w-full max-w-sm">
+          <button
+            onClick={() => { setUserPrediction('A'); setPredictionLocked(true); }}
+            className="flex-1 py-6 rounded-3xl bg-white/10 border border-white/20 text-white font-display font-black text-3xl hover:bg-white/20 transition-all active:scale-95"
+          >
+            A
+          </button>
+          <button
+            onClick={() => { setUserPrediction('B'); setPredictionLocked(true); }}
+            className="flex-1 py-6 rounded-3xl bg-white/10 border border-white/20 text-white font-display font-black text-3xl hover:bg-white/20 transition-all active:scale-95"
+          >
+            B
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center container mx-auto px-4 max-w-6xl py-12">

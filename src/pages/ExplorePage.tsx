@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { getPublicDuels } from '../lib/duels';
 import { DuelCard } from '../components/DuelCard';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { getBatchVoteCounts, castVote } from '../lib/votes';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: Grid },
@@ -22,6 +23,7 @@ export function ExplorePage() {
   const [page, setPage] = React.useState(0);
   const [hasMore, setHasMore] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
+  const [votes, setVotes] = React.useState<Record<string, { a: number; b: number; userPick: 'A' | 'B' | null }>>({});
   const PAGE_SIZE = 6;
 
   const loadMore = React.useCallback(async () => {
@@ -45,6 +47,11 @@ export function ExplorePage() {
       }));
 
       setDuels(prev => [...prev, ...mapped]);
+      
+      // Batch fetch vote counts
+      const voteMap = await getBatchVoteCounts(next.map(d => d.id));
+      setVotes(prev => ({ ...prev, ...voteMap }));
+      
       setPage(prev => prev + 1);
     } catch (err) {
       console.error('❌ Failed to load explore data:', err);
@@ -179,6 +186,21 @@ export function ExplorePage() {
                 duel={duel} 
                 onCardClick={handleCardClick}
                 showReactions={false}
+                showVoting={true}
+                voteCounts={votes[duel.id]}
+                onVote={async (pick) => {
+                  // Optimistic update
+                  setVotes(prev => ({
+                    ...prev,
+                    [duel.id]: {
+                      ...prev[duel.id],
+                      userPick: pick,
+                      a: pick === 'A' ? (prev[duel.id]?.a ?? 0) + 1 : (prev[duel.id]?.a ?? 0),
+                      b: pick === 'B' ? (prev[duel.id]?.b ?? 0) + 1 : (prev[duel.id]?.b ?? 0),
+                    }
+                  }));
+                  await castVote(duel.id, pick);
+                }}
               />
               <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black pointer-events-none text-white/50 tracking-tighter uppercase">
                 {new Date(duel.createdAt).toLocaleDateString() === new Date().toLocaleDateString() 
