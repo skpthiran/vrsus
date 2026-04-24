@@ -90,7 +90,7 @@ export function ProfilePage() {
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    if (user) {
+    if (user?.id) {
       try {
         const results = await getUserDuels(user.id, page, PAGE_SIZE);
         if (results.length < PAGE_SIZE) setHasMore(false);
@@ -125,7 +125,7 @@ export function ProfilePage() {
 
   React.useEffect(() => {
     async function loadProfile() {
-      if (user) {
+      if (user?.id) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('display_name, current_streak, best_streak')
@@ -237,7 +237,7 @@ export function ProfilePage() {
               </div>
               <div>
                 <h1 className="text-2xl font-display font-bold">{displayName}</h1>
-                <p className="text-sm text-neutral-500">{user.email}</p>
+                <p className="text-sm text-neutral-500">{user?.email}</p>
               </div>
             </div>
             <Link to="/settings">

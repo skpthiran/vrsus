@@ -26,7 +26,7 @@ export function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    if (!user) { navigate('/auth'); return; }
+    if (!user?.id) { navigate('/auth'); return; }
     supabase
       .from('profiles')
       .select('display_name, settings')
@@ -42,7 +42,7 @@ export function SettingsPage() {
   }, [user]);
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     setSaving(true);
     await supabase
       .from('profiles')
@@ -58,7 +58,7 @@ export function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     // Delete all duels first, then sign out (full account deletion requires admin API)
     await supabase.from('duels').delete().eq('user_id', user.id);
     await supabase.from('comments').delete().eq('user_id', user.id);

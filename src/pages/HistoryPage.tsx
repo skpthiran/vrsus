@@ -24,7 +24,7 @@ export function HistoryPage() {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     
-    if (user) {
+    if (user?.id) {
       try {
         const results = await getUserDuels(user.id, page, PAGE_SIZE);
         if (results.length < PAGE_SIZE) setHasMore(false);
@@ -80,7 +80,7 @@ export function HistoryPage() {
     // Optimistically remove from UI
     setDuels(prev => prev.filter(r => r.id !== id));
 
-    if (user) {
+    if (user?.id) {
       try {
         await deleteDuel(id);
       } catch (err) {
@@ -95,7 +95,7 @@ export function HistoryPage() {
   const handleClear = async () => {
     if (!window.confirm('Are you sure you want to clear all history?')) return;
 
-    if (user) {
+    if (user?.id) {
       try {
         const { error } = await supabase
           .from('duels')
@@ -118,7 +118,7 @@ export function HistoryPage() {
     // Optimistic update
     setDuels(prev => prev.map(r => r.id === id ? { ...r, isPublic: newStatus } : r));
     
-    if (user) {
+    if (user?.id) {
       const success = await toggleDuelPrivacy(id, newStatus);
       if (!success) {
         // Rollback

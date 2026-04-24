@@ -6,11 +6,13 @@ import html2canvas from 'html2canvas';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
 import { getDuelById } from '../lib/duels';
+import { useAuth } from '../contexts/AuthContext';
 
 export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const shareCardRef = React.useRef<HTMLDivElement>(null);
   
   const userPrediction = location.state?.userPrediction as 'A' | 'B' | null;

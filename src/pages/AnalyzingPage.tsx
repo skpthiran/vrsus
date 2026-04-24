@@ -58,7 +58,7 @@ export function AnalyzingPage() {
       setStepIndex(prev => (prev < steps.length - 1 ? prev + 1 : prev));
     }, 2000); // 2s per step for a smoother feel
 
-    analyzePhotos(rawA, rawB, mode, user?.id, challengeOf)
+    analyzePhotos(rawA, rawB, mode, user?.id ?? null, challengeOf ?? null)
       .then(async (result) => {
         // Construct the full result with images
         const fullResult = {
