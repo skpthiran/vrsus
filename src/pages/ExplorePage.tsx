@@ -36,6 +36,8 @@ export function ExplorePage() {
     setLoadingMore(true);
     try {
       const next = await getPublicDuels(page, PAGE_SIZE);
+      console.log(`[VRSUS] ExplorePage: getPublicDuels returned ${next.length} results for page ${page}`);
+      
       if (next.length < PAGE_SIZE) setHasMore(false);
 
       const mapped = next.map(d => ({

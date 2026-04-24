@@ -64,9 +64,11 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
     .range(from, to);
 
   if (error) {
-    console.error('getPublicDuels error:', error.message);
+    console.error('[VRSUS] getPublicDuels error:', error.message);
     return [];
   }
+
+  console.log(`[VRSUS] getPublicDuels found ${data?.length || 0} records`);
   
   return (data || []).map(d => ({
     id: d.id,
@@ -101,9 +103,11 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
     .range(from, to);
 
   if (error) {
-    console.error('getUserDuels error:', error.message);
+    console.error('[VRSUS] getUserDuels error:', error.message);
     return [];
   }
+
+  console.log(`[VRSUS] getUserDuels found ${data?.length || 0} records for user ${userId}`);
   
   return (data || []).map(d => ({
     id: d.id,

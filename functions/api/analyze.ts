@@ -42,14 +42,17 @@ function extractJSON(text: string): string {
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
-  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL || '';
-  const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || '';
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || env.PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY || env.PUBLIC_SUPABASE_ANON_KEY || '';
 
   // Debug check for environment variables and payload
   console.log('[VRSUS] ENV CHECK:', {
     hasSupabaseUrl: !!supabaseUrl,
     hasSupabaseKey: !!supabaseKey,
-    urlSource: env.SUPABASE_URL ? 'SUPABASE_URL' : env.VITE_SUPABASE_URL ? 'VITE_SUPABASE_URL' : 'none',
+    urlSource: env.SUPABASE_URL ? 'SUPABASE_URL' : 
+               env.VITE_SUPABASE_URL ? 'VITE_SUPABASE_URL' : 
+               env.NEXT_PUBLIC_SUPABASE_URL ? 'NEXT_PUBLIC_SUPABASE_URL' :
+               env.PUBLIC_SUPABASE_URL ? 'PUBLIC_SUPABASE_URL' : 'none',
     hasOpenRouter: !!env.OPENROUTER_API_KEY,
   });
 
@@ -67,6 +70,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
     const body = await request.json() as any;
     const { photoA, photoB, mode = 'general', userId, challengeOf } = body;
+    console.log('[VRSUS] Request Body:', { mode, userId, challengeOf, hasPhotoA: !!photoA, hasPhotoB: !!photoB });
 
     if (!photoA || !photoB) {
       return Response.json({ error: 'Both photoA and photoB are required' }, { status: 400, headers: corsHeaders });
@@ -388,10 +392,13 @@ Return ONLY:
           .single();
         
         if (saveError) {
-          console.error('[VRSUS] Duel save failed:', saveError.message, saveError.details);
+          console.error('[VRSUS] Duel save failed. Payload keys:', Object.keys(duelPayload));
+          console.error('[VRSUS] Duel save error message:', saveError.message);
+          console.error('[VRSUS] Duel save error details:', saveError.details);
+          console.error('[VRSUS] Duel save error hint:', saveError.hint);
         } else if (savedDuel) {
           savedId = savedDuel.id;
-          console.log('[VRSUS] Duel saved:', savedId);
+          console.log('[VRSUS] Duel saved successfully:', savedId);
           
           // If this was a challenge, increment the defenses of the original champion
           if (challengeOf) {

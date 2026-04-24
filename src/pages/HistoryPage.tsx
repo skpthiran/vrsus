@@ -20,27 +20,30 @@ export function HistoryPage() {
   const [loadingMore, setLoadingMore] = React.useState(false);
   const PAGE_SIZE = 6;
 
-  const loadMore = React.useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+  const loadMore = React.useCallback(async (isInitial = false) => {
+    if (loadingMore || (!hasMore && !isInitial)) return;
+    
     setLoadingMore(true);
+    const currentPage = isInitial ? 0 : page;
     
     if (user?.id) {
-      console.log('Loading history for user:', user?.id, 'page:', page);
+      console.log(`[VRSUS] Loading DB history for user: ${user.id}, page: ${currentPage}`);
       try {
-        const results = await getUserDuels(user.id, page, PAGE_SIZE);
+        const results = await getUserDuels(user.id, currentPage, PAGE_SIZE);
+        console.log(`[VRSUS] getUserDuels returned ${results.length} mapped results`);
+        
         if (results.length < PAGE_SIZE) setHasMore(false);
 
-        const mapped = results;
-
-        setDuels(prev => [...prev, ...mapped]);
-        setPage(prev => prev + 1);
+        setDuels(prev => isInitial ? results : [...prev, ...results]);
+        setPage(currentPage + 1);
       } catch (error) {
-        console.error("Failed to load DB history:", error);
-        if (page === 0) setDuels(getHistory());
+        console.error("[VRSUS] Failed to load DB history:", error);
+        if (currentPage === 0) setDuels(getHistory());
         setHasMore(false);
       }
     } else {
-      if (page === 0) setDuels(getHistory());
+      console.log('[VRSUS] No user ID, loading guest history from local storage');
+      if (currentPage === 0) setDuels(getHistory());
       setHasMore(false);
     }
     setLoadingMore(false);
@@ -49,14 +52,12 @@ export function HistoryPage() {
 
   React.useEffect(() => {
     // Reset and reload when user changes
+    setLoading(true);
     setDuels([]);
     setPage(0);
     setHasMore(true);
-  }, [user]);
-
-  React.useEffect(() => {
-    loadMore();
-  }, [user]);
+    loadMore(true);
+  }, [user?.id]);
 
   const sentinelRef = useInfiniteScroll(loadMore, hasMore);
 
