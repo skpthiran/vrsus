@@ -1,6 +1,12 @@
 import { supabase } from './supabase';
 import { DuelRecord } from '../types/history';
 
+const safeJson = (val: any, fallback: any) => {
+  if (!val) return fallback;
+  if (typeof val !== 'string') return val;
+  try { return JSON.parse(val); } catch { return val; }
+};
+
 export async function saveDuelToSupabase(record: DuelRecord, userId: string): Promise<string | null> {
   try {
     const { data, error } = await supabase
@@ -79,15 +85,15 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
     summary: d.summary,
     scoreA: d.score_a,
     scoreB: d.score_b,
-    scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
-    verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
+    scores: safeJson(d.scores, { A: { total: 0 }, B: { total: 0 } }),
+    verdict: safeJson(d.verdict, ''),
     isPublic: d.is_public,
     defenses: d.defenses,
     challengeOf: d.challenge_of,
     previewA: d.image_a_url,
     previewB: d.image_b_url,
-    reasonsForWin: typeof d.reasons_for_win === 'string' ? JSON.parse(d.reasons_for_win) : (d.reasons_for_win || []),
-    weaknessesOfLoser: typeof d.weaknesses_of_loser === 'string' ? JSON.parse(d.weaknesses_of_loser) : (d.weaknesses_of_loser || []),
+    reasonsForWin: safeJson(d.reasons_for_win, []),
+    weaknessesOfLoser: safeJson(d.weaknesses_of_loser, []),
   }));
 }
 
@@ -117,15 +123,15 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
     summary: d.summary,
     scoreA: d.score_a,
     scoreB: d.score_b,
-    scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
-    verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
+    scores: safeJson(d.scores, { A: { total: 0 }, B: { total: 0 } }),
+    verdict: safeJson(d.verdict, ''),
     isPublic: d.is_public,
     defenses: d.defenses,
     challengeOf: d.challenge_of,
     previewA: d.image_a_url,
     previewB: d.image_b_url,
-    reasonsForWin: typeof d.reasons_for_win === 'string' ? JSON.parse(d.reasons_for_win) : (d.reasons_for_win || []),
-    weaknessesOfLoser: typeof d.weaknesses_of_loser === 'string' ? JSON.parse(d.weaknesses_of_loser) : (d.weaknesses_of_loser || []),
+    reasonsForWin: safeJson(d.reasons_for_win, []),
+    weaknessesOfLoser: safeJson(d.weaknesses_of_loser, []),
   }));
 }
 
@@ -149,10 +155,10 @@ export async function getDuelById(duelId: string) {
     scoreB: data.score_b,
     previewA: data.image_a_url,
     previewB: data.image_b_url,
-    scores: typeof data.scores === 'string' ? JSON.parse(data.scores) : (data.scores || { A: { total: 0 }, B: { total: 0 } }),
-    verdict: typeof data.verdict === 'string' ? JSON.parse(data.verdict) : data.verdict,
-    reasonsForWin: typeof data.reasons_for_win === 'string' ? JSON.parse(data.reasons_for_win) : (data.reasons_for_win || []),
-    weaknessesOfLoser: typeof data.weaknesses_of_loser === 'string' ? JSON.parse(data.weaknesses_of_loser) : (data.weaknesses_of_loser || []),
+    scores: safeJson(data.scores, { A: { total: 0 }, B: { total: 0 } }),
+    verdict: safeJson(data.verdict, ''),
+    reasonsForWin: safeJson(data.reasons_for_win, []),
+    weaknessesOfLoser: safeJson(data.weaknesses_of_loser, []),
   };
 }
 
