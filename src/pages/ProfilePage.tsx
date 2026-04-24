@@ -99,16 +99,16 @@ export function ProfilePage() {
 
         const mapped = results.map(d => ({
           id: d.id,
-          createdAt: d.created_at,
+          createdAt: d.createdAt,
           mode: d.mode,
           winner: d.winner,
           margin: d.margin,
           summary: d.summary,
-          previewA: d.preview_a,
-          previewB: d.preview_b,
+          previewA: d.previewA,
+          previewB: d.previewB,
           scores: d.scores,
-          reasons_for_win: d.reasons_for_win,
-          weaknesses_of_loser: d.weaknesses_of_loser,
+          reasons_for_win: d.reasons,
+          weaknesses_of_loser: d.tips,
         }));
 
         setDuels(prev => [...prev, ...mapped]);
@@ -130,7 +130,7 @@ export function ProfilePage() {
       if (user?.id) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('id, display_name, email, avatar_url, country, total_duels, total_wins, avg_score, best_score, current_streak')
+          .select('id, display_name, email, avatar_url, country, total_duels, total_wins, avg_score, best_score, current_streak, best_streak')
           .eq('id', user.id)
           .single();
 

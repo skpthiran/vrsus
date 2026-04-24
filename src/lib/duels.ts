@@ -64,16 +64,27 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
     .range(from, to);
 
   if (error) {
-    console.error('getPublicDuels error:', error);
+    console.error('getPublicDuels error:', error.message);
     return [];
   }
   
   return (data || []).map(d => ({
-    ...d,
-    image_a_url: d.preview_a,
-    image_b_url: d.preview_b,
-    reasons_for_win: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
-    weaknesses_of_loser: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
+    id: d.id,
+    userId: d.user_id,
+    mode: d.mode,
+    winner: d.winner,
+    margin: d.margin,
+    summary: d.summary,
+    createdAt: d.created_at,
+    isPublic: d.is_public,
+    scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
+    verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
+    defenses: d.defenses,
+    challengeOf: d.challenge_of,
+    previewA: d.preview_a,
+    previewB: d.preview_b,
+    reasons: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
+    tips: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
   }));
 }
 
@@ -87,16 +98,27 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  if (error) throw error;
+  if (error) {
+    console.error('getUserDuels error:', error.message);
+    return [];
+  }
   
   return (data || []).map(d => ({
-    ...d,
-    image_a_url: d.preview_a,
-    image_b_url: d.preview_b,
+    id: d.id,
+    createdAt: d.created_at,
+    mode: d.mode,
+    winner: d.winner,
+    margin: d.margin,
+    summary: d.summary,
     scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
     verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
-    reasons_for_win: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
-    weaknesses_of_loser: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
+    isPublic: d.is_public,
+    defenses: d.defenses,
+    challengeOf: d.challenge_of,
+    previewA: d.preview_a,
+    previewB: d.preview_b,
+    reasons: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
+    tips: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
   }));
 }
 

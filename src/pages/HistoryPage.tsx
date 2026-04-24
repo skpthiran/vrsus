@@ -25,24 +25,25 @@ export function HistoryPage() {
     setLoadingMore(true);
     
     if (user?.id) {
+      console.log('Loading history for user:', user?.id, 'page:', page);
       try {
         const results = await getUserDuels(user.id, page, PAGE_SIZE);
         if (results.length < PAGE_SIZE) setHasMore(false);
 
         const mapped = results.map(d => ({
           id: d.id,
-          createdAt: d.created_at,
+          createdAt: d.createdAt,
           mode: d.mode,
           winner: d.winner,
           margin: d.margin,
           summary: d.summary,
-          previewA: d.preview_a,
-          previewB: d.preview_b,
+          previewA: d.previewA,
+          previewB: d.previewB,
           scores: d.scores,
-          reasons_for_win: d.reasons_for_win,
-          weaknesses_of_loser: d.weaknesses_of_loser,
+          reasons_for_win: d.reasons,
+          weaknesses_of_loser: d.tips,
           verdict: d.verdict,
-          isPublic: d.is_public,
+          isPublic: d.isPublic,
         }));
 
         setDuels(prev => [...prev, ...mapped]);
