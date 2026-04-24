@@ -42,8 +42,11 @@ function extractJSON(text: string): string {
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
-  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || env.PUBLIC_SUPABASE_URL || '';
-  const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY || env.PUBLIC_SUPABASE_ANON_KEY || '';
+  const FALLBACK_URL = 'https://azufpxcpbkcrqapfislu.supabase.co';
+  const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6dWZweGNwYmtjcnFhcGZpc2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4OTczMjUsImV4cCI6MjA5MjQ3MzMyNX0.VY0KpiuayrbXcYhVmahRiphye-kOGoMDqWTePByxnqHM';
+
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || env.PUBLIC_SUPABASE_URL || FALLBACK_URL;
+  const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY || env.PUBLIC_SUPABASE_ANON_KEY || FALLBACK_KEY;
 
   // Debug check for environment variables and payload
   console.log('[VRSUS] ENV CHECK:', {
