@@ -133,7 +133,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           'HTTP-Referer': 'https://vrsus.pages.dev',
           'X-Title': 'VRSUS',
         },
-        body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
+        body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature: 0 }),
       });
       const data = await res.json() as any;
       if (data.error) throw new Error(`OpenRouter(${model}): ${JSON.stringify(data.error)}`);
@@ -149,7 +149,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           'Authorization': `Bearer ${groqKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: maxTokens }),
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: maxTokens, temperature: 0 }),
       });
       const data = await res.json() as any;
       if (data.error) throw new Error(`Groq: ${JSON.stringify(data.error)}`);
@@ -165,7 +165,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           'Authorization': `Bearer ${cerebrasKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model: 'llama-3.3-70b', messages, max_tokens: maxTokens }),
+        body: JSON.stringify({ model: 'llama-3.3-70b', messages, max_tokens: maxTokens, temperature: 0 }),
       });
       const data = await res.json() as any;
       if (data.error) throw new Error(`Cerebras: ${JSON.stringify(data.error)}`);
@@ -286,29 +286,41 @@ Return ONLY:
       log('Stage 1 raw response: ' + raw1.slice(0, 500));
       visualScores = JSON.parse(extractJSON(raw1));
       
-      // Force score spread if AI still played it safe
-      const totalA = Object.entries(visualScores.A)
+      // Enforce anchor direction — if anchor says A wins but Stage 1 raw scores say B, flip the nudge
+      const rawTotalA = Object.entries(visualScores.A)
         .filter(([k]) => k !== 'observation')
         .reduce((sum, [, v]) => sum + (v as number), 0);
-      const totalB = Object.entries(visualScores.B)
+      const rawTotalB = Object.entries(visualScores.B)
         .filter(([k]) => k !== 'observation')
         .reduce((sum, [, v]) => sum + (v as number), 0);
 
-      if (Math.abs(totalA - totalB) < 12) {
-        log('Stage 1 scores too similar — boosting spread');
-        // Nudge the higher raw scorer up and lower scorer down aggressively
-        const aWins = totalA >= totalB;
-        const winner = aWins ? 'A' : 'B';
-        const loser = aWins ? 'B' : 'A';
-        
-        // Multi-category nudge
-        visualScores[winner].face_card = Math.min(10, visualScores[winner].face_card + 2);
-        visualScores[winner].aura = Math.min(10, visualScores[winner].aura + 2);
-        visualScores[winner].glow = Math.min(10, visualScores[winner].glow + 2);
-        
-        visualScores[loser].face_card = Math.max(1, visualScores[loser].face_card - 2);
-        visualScores[loser].body = Math.max(1, visualScores[loser].body - 2);
-        visualScores[loser].glow = Math.max(1, visualScores[loser].glow - 2);
+      const anchorSaysA = anchorVerdict.better === 'A';
+      const scoresSayA = rawTotalA >= rawTotalB;
+
+      // If anchor and scores disagree, boost the anchor's pick
+      if (anchorSaysA !== scoresSayA) {
+        log('Anchor and Stage 1 disagree — enforcing anchor direction');
+        const anchorWinner = anchorVerdict.better;
+        const anchorLoser = anchorWinner === 'A' ? 'B' : 'A';
+        visualScores[anchorWinner].aura = Math.min(10, visualScores[anchorWinner].aura + 3);
+        visualScores[anchorWinner].face_card = Math.min(10, visualScores[anchorWinner].face_card + 2);
+        visualScores[anchorLoser].aura = Math.max(1, visualScores[anchorLoser].aura - 3);
+        visualScores[anchorLoser].glow = Math.max(1, visualScores[anchorLoser].glow - 2);
+      }
+
+      const finalTotalA = Object.entries(visualScores.A)
+        .filter(([k]) => k !== 'observation')
+        .reduce((sum, [, v]) => sum + (v as number), 0);
+      const finalTotalB = Object.entries(visualScores.B)
+        .filter(([k]) => k !== 'observation')
+        .reduce((sum, [, v]) => sum + (v as number), 0);
+
+      if (Math.abs(finalTotalA - finalTotalB) < 6) {
+        log('Scores still too close — applying final spread nudge');
+        const winner = anchorVerdict.better;
+        const loser = winner === 'A' ? 'B' : 'A';
+        visualScores[winner].aura = Math.min(10, visualScores[winner].aura + 1);
+        visualScores[loser].glow = Math.max(1, visualScores[loser].glow - 1);
       }
       
       log('Stage 1 complete');
