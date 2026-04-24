@@ -15,4 +15,6 @@ export interface DuelRecord {
   weaknesses_of_loser: string[];
   verdict?: string;
   isPublic?: boolean;
+  challenge_of?: string; // UUID of the original duel
+  defenses?: number;     // Number of successful defenses
 }

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UploadCloud, Image as ImageIcon, X, Zap, Loader2 } from 'lucide-react';
 import { analyzePhotos } from '../lib/api';
@@ -27,6 +27,21 @@ export function CreateDuelPage() {
   const [mode, setMode] = useState('general');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const location = useLocation();
+  const challengeData = location.state as { challengePhoto: string; challengeDuelId: string; challengeDefenses: number } | null;
+  const isChallengeMode = !!challengeData?.challengePhoto;
+
+  React.useEffect(() => {
+    if (challengeData?.challengePhoto) {
+      // Photo A is locked as the champion
+      setSlotA({
+        preview: challengeData.challengePhoto,
+        base64: challengeData.challengePhoto.split(',')[1],
+        file: null
+      });
+    }
+  }, [challengeData]);
 
   const handleFileUpload = (slot: 'A' | 'B', file: File) => {
     const reader = new FileReader();
@@ -70,6 +85,12 @@ export function CreateDuelPage() {
     sessionStorage.setItem('vrsus_pending_b', slotB.base64);
     sessionStorage.setItem('vrsus_pending_mode', mode);
     
+    if (isChallengeMode && challengeData?.challengeDuelId) {
+      sessionStorage.setItem('vrsus_pending_challenge_of', challengeData.challengeDuelId);
+    } else {
+      sessionStorage.removeItem('vrsus_pending_challenge_of');
+    }
+    
     navigate('/duel/analyzing');
   };
 
@@ -90,6 +111,8 @@ export function CreateDuelPage() {
                onRemove={() => handleRemove('A')} 
                onUpload={(file) => handleFileUpload('A', file)} 
                accent="blue"
+               locked={isChallengeMode}
+               isChampion={isChallengeMode}
             />
             {/* Photo B */}
             <UploadCard 
@@ -174,8 +197,13 @@ export function CreateDuelPage() {
   );
 }
 
-function UploadCard({ label, slot, onRemove, onUpload, accent }: { label: string, slot: PhotoSlot, onRemove: () => void, onUpload: (file: File) => void, accent: 'blue' | 'violet' }) {
+function UploadCard({ label, slot, onRemove, onUpload, accent, locked, isChampion }: { label: string, slot: PhotoSlot, onRemove: () => void, onUpload: (file: File) => void, accent: 'blue' | 'violet', locked?: boolean, isChampion?: boolean }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    if (locked) return;
+    if (!slot.preview) fileInputRef.current?.click();
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -192,20 +220,26 @@ function UploadCard({ label, slot, onRemove, onUpload, accent }: { label: string
        />
        <div className="flex items-center justify-between px-2">
          <span className="font-display font-bold text-lg">{label}</span>
-         {slot.preview && (
+         {slot.preview && !locked && (
            <button onClick={onRemove} className="text-xs text-neutral-500 hover:text-red-400 transition-colors uppercase tracking-wider font-semibold">Remove</button>
          )}
        </div>
         <div className={cn(
           "aspect-[3/4] md:aspect-[3/4] min-h-[280px] md:min-h-0 rounded-3xl overflow-hidden relative transition-all duration-300 border-2",
-          slot.preview ? (accent === 'blue' ? 'border-transparent shadow-[0_0_40px_rgba(59,130,246,0.1)]' : 'border-transparent shadow-[0_0_40px_rgba(139,92,246,0.1)]') : "border-dashed border-border bg-surface hover:bg-surface-hover hover:border-neutral-600 cursor-pointer"
+          slot.preview ? (accent === 'blue' ? 'border-transparent shadow-[0_0_40px_rgba(59,130,246,0.1)]' : 'border-transparent shadow-[0_0_40px_rgba(139,92,246,0.1)]') : "border-dashed border-border bg-surface hover:bg-surface-hover hover:border-neutral-600 cursor-pointer",
+          locked && "cursor-default"
         )}
-       onClick={() => !slot.preview && fileInputRef.current?.click()}
+       onClick={handleClick}
        >
           {slot.preview ? (
             <>
                <img src={slot.preview} alt={label} className="w-full h-full object-cover" />
                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 pointer-events-none"></div>
+               {isChampion && (
+                 <div className="absolute top-4 right-4 bg-winner text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1 animate-in zoom-in duration-500">
+                    <span>👑</span> CHAMPION
+                 </div>
+               )}
             </>
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-500">

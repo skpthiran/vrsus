@@ -20,6 +20,7 @@ export async function saveDuelToSupabase(record: DuelRecord, userId: string): Pr
         image_b_url: record.previewB,
         is_public: true,
         verdict: record.verdict,
+        challenge_of: record.challenge_of,
       })
       .select('id')
       .single();
@@ -29,6 +30,18 @@ export async function saveDuelToSupabase(record: DuelRecord, userId: string): Pr
     // Update streak
     const winnerScore = Math.max(record.scores.A.total, record.scores.B.total);
     await updateStreak(userId, winnerScore);
+
+    // Increment defenses on original duel if this is a challenge
+    if (record.challenge_of) {
+      await supabase.rpc('increment_defenses', { duel_id: record.challenge_of });
+      // Fallback if RPC isn't set up yet:
+      // await supabase.from('duels').update({ defenses: supabase.raw('defenses + 1') }).eq('id', record.challenge_of);
+      // Actually, let's use a simpler update for now to avoid needing an RPC immediately
+      const { data: original } = await supabase.from('duels').select('defenses').eq('id', record.challenge_of).single();
+      if (original) {
+        await supabase.from('duels').update({ defenses: (original.defenses || 0) + 1 }).eq('id', record.challenge_of);
+      }
+    }
 
     return data.id;
   } catch (err) {
@@ -45,7 +58,7 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, created_at, is_public, scores, verdict, preview_a:image_a_url, preview_b:image_b_url')
+    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, created_at, is_public, scores, verdict, defenses, challenge_of, preview_a:image_a_url, preview_b:image_b_url')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -62,7 +75,7 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, is_public, reasons_for_win, weaknesses_of_loser, preview_a:image_a_url, preview_b:image_b_url')
+    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, is_public, reasons_for_win, weaknesses_of_loser, defenses, challenge_of, preview_a:image_a_url, preview_b:image_b_url')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(from, to);

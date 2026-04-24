@@ -22,3 +22,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
  */
 
+/**
+ * SQL to update duels table for Challenge Winner feature:
+ * 
+ * ALTER TABLE duels ADD COLUMN IF NOT EXISTS challenge_of uuid REFERENCES duels(id);
+ * ALTER TABLE duels ADD COLUMN IF NOT EXISTS defenses integer DEFAULT 0;
+ */

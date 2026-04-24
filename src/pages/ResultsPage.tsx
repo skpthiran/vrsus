@@ -119,6 +119,16 @@ export function ResultsPage() {
     alert('Link copied to clipboard!');
   };
 
+  const handleChallenge = () => {
+    navigate('/duel', { 
+      state: { 
+        challengePhoto: winnerPreview,
+        challengeDuelId: result.id,
+        challengeDefenses: result.defenses || 0
+      } 
+    });
+  };
+
   return (
     <div className="flex-1 container mx-auto px-4 max-w-6xl py-12">
        <div className="text-center mb-12">
@@ -130,6 +140,18 @@ export function ResultsPage() {
             Winner Selected
           </motion.h1>
           <p className="text-neutral-400 text-lg">AI has determined the stronger visual impression.</p>
+          
+          {/* Defense Count Banner */}
+          {result.defenses > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-winner/10 border border-winner/30 rounded-full text-winner text-sm font-bold"
+            >
+              <span>🛡️</span>
+              <span>This champion has defended {result.defenses} time{result.defenses !== 1 ? 's' : ''}</span>
+            </motion.div>
+          )}
        </div>
 
        {userPrediction && result && (
@@ -319,6 +341,25 @@ export function ResultsPage() {
                    Save Image
                 </Button>
              </div>
+          </div>
+
+          {/* Challenge Winner Loop CTA */}
+          <div className="mt-8 border border-winner/30 rounded-[2rem] p-8 bg-winner/5 flex flex-col items-center gap-6 text-center">
+             <div className="w-16 h-16 rounded-full bg-winner/20 flex items-center justify-center text-3xl">
+               ⚔️
+             </div>
+             <div className="space-y-2">
+               <h3 className="text-2xl font-display font-bold text-white">Can you beat this champion?</h3>
+               <p className="text-neutral-400 max-w-md">
+                 This photo is officially a VRSUS champion. Upload your best shot to see if you can take the title.
+               </p>
+             </div>
+             <Button 
+               onClick={handleChallenge}
+               className="bg-winner hover:bg-yellow-500 text-black font-bold px-10 py-6 rounded-2xl text-lg shadow-[0_0_30px_rgba(251,191,36,0.3)] transition-all hover:scale-105 active:scale-95"
+             >
+               Accept the Challenge
+             </Button>
           </div>
           
           <div className="text-center pt-8">

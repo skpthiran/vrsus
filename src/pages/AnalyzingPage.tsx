@@ -37,6 +37,7 @@ export function AnalyzingPage() {
     const rawA = sessionStorage.getItem('vrsus_pending_a');
     const rawB = sessionStorage.getItem('vrsus_pending_b');
     const mode = sessionStorage.getItem('vrsus_pending_mode') || 'general';
+    const challengeOf = sessionStorage.getItem('vrsus_pending_challenge_of') || undefined;
 
     if (!rawA || !rawB) {
       navigate('/duel');
@@ -74,6 +75,7 @@ export function AnalyzingPage() {
           reasons_for_win: result.reasons_for_win,
           weaknesses_of_loser: result.weaknesses_of_loser,
           verdict: result.verdict,
+          challenge_of: challengeOf,
         };
 
         // Persistent save to local history
@@ -90,6 +92,7 @@ export function AnalyzingPage() {
         sessionStorage.removeItem('vrsus_pending_a');
         sessionStorage.removeItem('vrsus_pending_b');
         sessionStorage.removeItem('vrsus_pending_mode');
+        sessionStorage.removeItem('vrsus_pending_challenge_of');
 
         // Store result for Results page
         sessionStorage.setItem('vrsus_last_result', JSON.stringify({
