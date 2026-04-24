@@ -20,6 +20,7 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [displayName, setDisplayName] = useState('');
+  const [country, setCountry] = useState('Unknown');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -29,16 +30,18 @@ export function SettingsPage() {
     if (!user?.id) { navigate('/auth'); return; }
     supabase
       .from('profiles')
-      .select('display_name, settings')
+      .select('display_name, country, settings')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data) {
           setDisplayName(data.display_name || '');
+          setCountry(data.country || 'Unknown');
           setSettings({ ...DEFAULT_SETTINGS, ...(data.settings || {}) });
         }
         setLoading(false);
       });
+
   }, [user]);
 
   const handleSave = async () => {
@@ -46,8 +49,13 @@ export function SettingsPage() {
     setSaving(true);
     await supabase
       .from('profiles')
-      .update({ display_name: displayName, settings })
+      .update({ 
+        display_name: displayName, 
+        country: country,
+        settings 
+      })
       .eq('id', user.id);
+
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -126,6 +134,21 @@ export function SettingsPage() {
                 />
                 <p className="text-xs text-neutral-500 mt-1.5">Shown on comments and your public profile.</p>
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Country</label>
+                <select
+                  value={country}
+                  onChange={e => setCountry(e.target.value)}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent text-white"
+                >
+                  {['Sri Lanka', 'India', 'USA', 'UK', 'Australia', 'Canada', 'Germany', 'France', 'Japan', 'Brazil', 'Other', 'Unknown'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-neutral-500 mt-1.5">Helps you rank on regional leaderboards.</p>
+              </div>
+
 
               <button
                 onClick={handleSave}

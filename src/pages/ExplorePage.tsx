@@ -6,6 +6,8 @@ import { getPublicDuels } from '../lib/duels';
 import { DuelCard } from '../components/DuelCard';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { getBatchVoteCounts, castVote } from '../lib/votes';
+import { getLeaderboard } from '../lib/stats';
+import { calculateRank } from '../lib/ranks';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: Grid },
@@ -16,9 +18,12 @@ const CATEGORIES = [
 
 export function ExplorePage() {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = React.useState('all');
   const [duels, setDuels] = React.useState<any[]>([]);
+  const [activeCategory, setActiveCategory] = React.useState('all');
+
+  const [leaderboardFilter, setLeaderboardFilter] = React.useState<'global' | 'country'>('global');
   const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
+
   const [loading, setLoading] = React.useState(true);
   const [page, setPage] = React.useState(0);
   const [hasMore, setHasMore] = React.useState(true);
@@ -61,6 +66,15 @@ export function ExplorePage() {
     }
   }, [loadingMore, hasMore, page]);
 
+  // Load when tab switches to Leaderboard
+  React.useEffect(() => {
+    if (activeCategory === 'leaderboard') {
+      getLeaderboard(leaderboardFilter === 'country' ? 'Sri Lanka' : undefined)
+        .then(setLeaderboard);
+    }
+  }, [activeCategory, leaderboardFilter]);
+
+
   React.useEffect(() => {
     loadMore();
   }, []);
@@ -95,7 +109,12 @@ export function ExplorePage() {
           return (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => {
+                setActiveCategory(cat.id);
+                if (cat.id === 'leaderboard') {
+                  setPage(0);
+                }
+              }}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-full whitespace-nowrap transition-all font-bold text-sm",
                 activeCategory === cat.id 
@@ -106,6 +125,7 @@ export function ExplorePage() {
               <Icon size={16} />
               {cat.label}
             </button>
+
           );
         })}
       </div>
@@ -121,53 +141,54 @@ export function ExplorePage() {
             ))}
           </div>
         ) : activeCategory === 'leaderboard' ? (
-          <div className="bg-surface border border-border rounded-[2rem] overflow-hidden">
-            <div className="p-6 border-b border-border bg-accent/5">
-              <h2 className="text-xl font-display font-black">WEEKLY STARS</h2>
-              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">Top scores from the last 7 days</p>
+          <div className="space-y-4">
+            {/* Filter tabs */}
+            <div className="flex gap-2 mb-4">
+              {['global', 'country'].map(f => (
+                <button 
+                  key={f} 
+                  onClick={() => setLeaderboardFilter(f as any)}
+                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                    leaderboardFilter === f 
+                      ? 'bg-accent text-white' 
+                      : 'bg-white/10 text-white/50 hover:bg-white/20'
+                  }`}
+                >
+                  {f === 'global' ? '🌍 Global' : '🇱🇰 Sri Lanka'}
+                </button>
+              ))}
             </div>
-            
-            <div className="divide-y divide-border">
+
+            {/* Leaderboard rows */}
+            <div className="space-y-3">
               {leaderboard.length === 0 ? (
-                <div className="p-10 text-center text-neutral-500">
-                  No high scores this week yet.
+                <div className="text-center py-20 text-neutral-500">
+                  <Trophy size={48} className="mx-auto mb-4 opacity-20" />
+                  <p>No players on this leaderboard yet.</p>
                 </div>
               ) : (
-                leaderboard.map((entry, index) => (
-                  <div key={entry.id} className="flex items-center gap-4 p-5 hover:bg-white/[0.02] transition-colors">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center font-black italic",
-                      index === 0 ? "bg-yellow-400 text-black" :
-                      index === 1 ? "bg-neutral-300 text-black" :
-                      index === 2 ? "bg-orange-400 text-black" : "text-neutral-500"
-                    )}>
-                      {index + 1}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <Link 
-                        to={`/results/${entry.id}`}
-                        className="group flex-1"
-                      >{entry.profiles?.display_name || 'Anonymous'}
-                      </Link>
-                      <div className="text-xs text-neutral-500 font-medium">
-                        {entry.mode} • {new Date(entry.created_at).toLocaleDateString()}
+                leaderboard.map((entry) => {
+                  const rankInfo = calculateRank(entry.total_duels, entry.winRate);
+                  return (
+                    <div key={entry.id} className="flex items-center gap-4 bg-surface border border-border rounded-2xl px-4 py-3 hover:border-white/20 transition-colors">
+                      <span className="font-display font-black text-2xl text-white/30 w-10">#{entry.rank}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-white truncate">{entry.display_name ?? 'Anonymous'}</p>
+                        <p className="text-white/40 text-xs">{entry.country} · {entry.total_duels} duels</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-display font-black text-lg ${rankInfo.color}`}>
+                          {rankInfo.emoji} {rankInfo.rank}
+                        </p>
+                        <p className="text-white/50 text-[10px] font-bold uppercase tracking-wider">{entry.winRate}% wins</p>
                       </div>
                     </div>
-                    
-                    <div className="text-right">
-                      <div className="text-xl font-display font-black text-accent leading-none">
-                        {entry.max_score}
-                      </div>
-                      <div className="text-[10px] text-neutral-600 font-bold uppercase tracking-tighter">
-                        SCORE
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
+
         ) : duels.length === 0 ? (
           <div className="text-center py-20 bg-surface rounded-[2rem] border border-dashed border-neutral-800">
             <Trophy className="mx-auto text-neutral-700 mb-4" size={48} />

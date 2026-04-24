@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { analyzePhotos } from '../lib/api';
 import { saveDuelToSupabase } from '../lib/duels';
+import { updateUserStats } from '../lib/stats';
+
 import { saveToHistory } from '../lib/history';
 import { useAuth } from '../contexts/AuthContext';
 import { DuelRecord } from '../types/history';
@@ -88,6 +90,10 @@ export function AnalyzingPage() {
 
         // Then try to navigate to persistent URL if we have an ID
         if (result.id) {
+          // Update persistent stats for logged in users
+          if (user?.id) {
+            updateUserStats(user.id);
+          }
           navigate(`/results/${result.id}`, { state: { result: fullResult, userPrediction: predictionRef.current } });
         } else {
           // No ID (guest save failed or not attempted) — navigate with full state

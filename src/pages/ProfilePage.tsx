@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { getHistory } from '../lib/history';
 import { cn } from '../lib/utils';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { calculateRank } from '../lib/ranks';
 
 function DuelRow({ record, onClick }: { record: any, onClick: () => void, key?: any }) {
   const imgRef = React.useRef<HTMLDivElement>(null);
@@ -80,6 +81,7 @@ export function ProfilePage() {
   const { user, signOut } = useAuth();
   const [duels, setDuels] = React.useState<any[]>([]);
   const [displayName, setDisplayName] = React.useState('');
+  const [profile, setProfile] = React.useState<any>(null);
   const [streak, setStreak] = React.useState({ current: 0, best: 0 });
   const [loading, setLoading] = React.useState(true);
   const [page, setPage] = React.useState(0);
@@ -126,15 +128,16 @@ export function ProfilePage() {
   React.useEffect(() => {
     async function loadProfile() {
       if (user?.id) {
-        const { data: profile } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('display_name, current_streak, best_streak')
+          .select('display_name, current_streak, best_streak, total_wins, total_duels, avg_score, best_score, country')
           .eq('id', user.id)
           .single();
-        setDisplayName(profile?.display_name || user.email?.split('@')[0] || 'User');
+        setProfile(profileData);
+        setDisplayName(profileData?.display_name || user.email?.split('@')[0] || 'User');
         setStreak({
-          current: profile?.current_streak || 0,
-          best: profile?.best_streak || 0,
+          current: profileData?.current_streak || 0,
+          best: profileData?.best_streak || 0,
         });
       }
     }
@@ -238,15 +241,40 @@ export function ProfilePage() {
               <div>
                 <h1 className="text-2xl font-display font-bold">{displayName}</h1>
                 <p className="text-sm text-neutral-500">{user?.email}</p>
+                {profile?.country && profile.country !== 'Unknown' && (
+                  <p className="text-xs text-neutral-500 mt-0.5">📍 {profile.country}</p>
+                )}
               </div>
             </div>
+            
+            {/* Rank Badge */}
+            {profile && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-2xl">{calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).emoji}</span>
+                <div>
+                  <p className={`font-display font-black text-sm ${calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).color}`}>
+                    {calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).rank}
+                  </p>
+                  {calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).nextRank && (
+                    <div className="w-16 h-1 bg-white/10 rounded-full mt-0.5">
+                      <div 
+                        className="h-full bg-accent rounded-full transition-all" 
+                        style={{ width: `${calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).progress}%` }} 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Link to="/settings">
-              <button className="flex items-center gap-2 text-sm text-neutral-400 hover:text-foreground transition-colors bg-surface border border-border px-3 py-2 rounded-xl">
+              <button className="flex items-center gap-2 text-sm text-neutral-400 hover:text-foreground transition-colors bg-surface border border-border px-3 py-2 rounded-xl ml-2">
                 <Settings size={15} />
-                <span className="hidden sm:inline">Edit Profile</span>
+                <span className="hidden sm:inline">Edit</span>
               </button>
             </Link>
           </div>
+
 
           {/* Streak Banner */}
           {streak.current > 0 && (
@@ -274,20 +302,22 @@ export function ProfilePage() {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Total Duels', value: stats.total, icon: <Zap size={18} />, color: 'text-accent' },
-              { label: 'Avg Score', value: stats.avgScore || '—', icon: <Star size={18} />, color: 'text-yellow-400' },
-              { label: 'Best Score', value: stats.bestScore || '—', icon: <Trophy size={18} />, color: 'text-green-400' },
-              { label: 'Best Streak', value: streak.best > 0 ? `${streak.best} 🔥` : '—', icon: <Zap size={18} />, color: 'text-orange-400' },
-            ].map((stat, i) => (
-              <div key={i} className="bg-surface border border-border rounded-2xl p-4">
-                <div className={cn('mb-2', stat.color)}>{stat.icon}</div>
-                <div className="text-xl font-display font-bold capitalize">{stat.value}</div>
-                <div className="text-xs text-neutral-500 mt-0.5">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+          {profile && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Win Rate', value: `${profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0}%`, icon: '🏆', color: 'text-yellow-400' },
+                { label: 'Avg Score', value: profile.avg_score ?? 0, icon: '📊', color: 'text-accent' },
+                { label: 'Best Score', value: profile.best_score ?? 0, icon: '⭐', color: 'text-green-400' },
+                { label: '🔥 Streak', value: profile.current_streak ?? 0, icon: '🔥', color: 'text-orange-400' },
+              ].map((stat, i) => (
+                <div key={i} className="bg-surface border border-border rounded-2xl p-4 text-center">
+                  <div className="text-2xl font-display font-black text-white">{stat.value}</div>
+                  <div className="text-xs text-neutral-500 mt-1">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
 
           {/* Recent Duels */}
           <div>

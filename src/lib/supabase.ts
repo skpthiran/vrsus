@@ -23,8 +23,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  */
 
 /**
- * SQL to update duels table for Challenge Winner feature:
+ * SQL to update profiles table for stats and ranks:
  * 
- * ALTER TABLE duels ADD COLUMN IF NOT EXISTS challenge_of uuid REFERENCES duels(id);
- * ALTER TABLE duels ADD COLUMN IF NOT EXISTS defenses integer DEFAULT 0;
+ * ALTER TABLE profiles ADD COLUMN IF NOT EXISTS country text DEFAULT 'Unknown';
+ * ALTER TABLE profiles ADD COLUMN IF NOT EXISTS current_streak integer DEFAULT 0;
+ * ALTER TABLE profiles ADD COLUMN IF NOT EXISTS best_streak integer DEFAULT 0;
+ * ALTER TABLE profiles ADD COLUMN IF NOT EXISTS total_wins integer DEFAULT 0;
+ * ALTER TABLE profiles ADD COLUMN IF NOT EXISTS total_duels integer DEFAULT 0;
+ * ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avg_score numeric DEFAULT 0;
+ * ALTER TABLE profiles ADD COLUMN IF NOT EXISTS best_score integer DEFAULT 0;
+ * CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
+ * CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
  */
+
