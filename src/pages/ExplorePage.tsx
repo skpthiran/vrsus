@@ -25,7 +25,7 @@ export function ExplorePage() {
   const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
 
   const [loading, setLoading] = React.useState(true);
-  const [page, setPage] = React.useState(0);
+  const pageRef = React.useRef(0);
   const [hasMore, setHasMore] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [votes, setVotes] = React.useState<Record<string, { a: number; b: number; userPick: 'A' | 'B' | null }>>({});
@@ -34,9 +34,10 @@ export function ExplorePage() {
   const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
+    const currentPage = pageRef.current;
     try {
-      const next = await getPublicDuels(page, PAGE_SIZE);
-      console.log(`[VRSUS] ExplorePage: getPublicDuels returned ${next.length} results for page ${page}`);
+      const next = await getPublicDuels(currentPage, PAGE_SIZE);
+      console.log(`[Explore] page: ${currentPage}, fetched: ${next.length}`);
       
       if (next.length < PAGE_SIZE) setHasMore(false);
 
@@ -52,14 +53,14 @@ export function ExplorePage() {
       const voteMap = await getBatchVoteCounts(next.map(d => d.id));
       setVotes(prev => ({ ...prev, ...voteMap }));
       
-      setPage(prev => prev + 1);
+      pageRef.current += 1;
     } catch (err) {
       console.error('❌ Failed to load explore data:', err);
     } finally {
       setLoadingMore(false);
       setLoading(false);
     }
-  }, [loadingMore, hasMore, page]);
+  }, [loadingMore, hasMore]);
 
   // Load when tab switches to Leaderboard
   React.useEffect(() => {

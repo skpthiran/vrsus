@@ -58,31 +58,30 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, user_id, mode, winner, margin, summary, created_at, is_public, score_a, score_b, scores, verdict, defenses, challenge_of, image_a_url, image_b_url, reasons_for_win, weaknesses_of_loser')
+    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, is_public, defenses, challenge_of, image_a_url, image_b_url, reasons_for_win, weaknesses_of_loser')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(from, to);
 
   if (error) {
-    console.error('[VRSUS] getPublicDuels error:', error.message);
+    console.error('[Explore] fetch error:', error.message);
     return [];
   }
 
-  console.log(`[VRSUS] getPublicDuels found ${data?.length || 0} records`);
+  console.log('[Explore] fetched:', data?.length);
   
   return (data || []).map(d => ({
     id: d.id,
-    userId: d.user_id,
+    createdAt: d.created_at,
     mode: d.mode,
     winner: d.winner,
     margin: d.margin,
     summary: d.summary,
-    createdAt: d.created_at,
-    isPublic: d.is_public,
     scoreA: d.score_a,
     scoreB: d.score_b,
     scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
     verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
+    isPublic: d.is_public,
     defenses: d.defenses,
     challengeOf: d.challenge_of,
     previewA: d.image_a_url,

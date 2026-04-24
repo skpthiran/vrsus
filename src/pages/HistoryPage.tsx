@@ -15,7 +15,7 @@ export function HistoryPage() {
   const { user } = useAuth();
   const [duels, setDuels] = React.useState<DuelRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [page, setPage] = React.useState(0);
+  const pageRef = React.useRef(0);
   const [hasMore, setHasMore] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const PAGE_SIZE = 6;
@@ -24,18 +24,19 @@ export function HistoryPage() {
     if (loadingMore || (!hasMore && !isInitial)) return;
     
     setLoadingMore(true);
-    const currentPage = isInitial ? 0 : page;
+    if (isInitial) pageRef.current = 0;
+    const currentPage = pageRef.current;
     
     if (user?.id) {
-      console.log(`[VRSUS] Loading DB history for user: ${user.id}, page: ${currentPage}`);
+      console.log(`[History] Loading DB history for user: ${user.id}, page: ${currentPage}`);
       try {
         const results = await getUserDuels(user.id, currentPage, PAGE_SIZE);
-        console.log(`[VRSUS] getUserDuels returned ${results.length} mapped results`);
+        console.log(`[History] page: ${currentPage}, fetched: ${results.length}`);
         
         if (results.length < PAGE_SIZE) setHasMore(false);
 
         setDuels(prev => isInitial ? results : [...prev, ...results]);
-        setPage(currentPage + 1);
+        pageRef.current += 1;
       } catch (error) {
         console.error("[VRSUS] Failed to load DB history:", error);
         if (currentPage === 0) setDuels(getHistory());
@@ -48,13 +49,13 @@ export function HistoryPage() {
     }
     setLoadingMore(false);
     setLoading(false);
-  }, [loadingMore, hasMore, page, user]);
+  }, [loadingMore, hasMore, user]);
 
   React.useEffect(() => {
     // Reset and reload when user changes
     setLoading(true);
     setDuels([]);
-    setPage(0);
+    pageRef.current = 0;
     setHasMore(true);
     loadMore(true);
   }, [user?.id]);

@@ -212,9 +212,9 @@ export function DuelCard({
           </div>
           
           {/* Description Text */}
-          {(!showVoting || voteCounts?.userPick) && duel.reason && (
+          {(!showVoting || voteCounts?.userPick) && duel.summary && (
             <p className="text-white font-medium text-xs line-clamp-1 italic text-center opacity-80 px-2">
-              "{duel.reason}"
+              "{duel.summary}"
             </p>
           )}
         </div>
