@@ -245,7 +245,7 @@ CARDINAL RULE — Photo quality is NEVER a factor:
 - Dark lighting does NOT mean bad skin. Only score glow low if you can actually see bad skin texture, acne, dullness, or uneven tone on the person.
 - Awkward angle does NOT mean weak jaw. Assess bone structure from what IS visible.
 - Mirror selfie does NOT mean low style. Judge the actual clothing and grooming visible.
-- Only use neutral score (5) for a category if the relevant body part is completely outside the frame — for example, body score 5 if it's a face-only photo with no torso visible. Do NOT use 5 as a lazy default when lighting is dim or angle is imperfect. Dim lighting on a muscular person still shows muscles. An imperfect angle on a clear face still shows bone structure. Try to assess — only default to 5 if the feature is literally not in the frame.
+- NEVER give a person all 5s across every category. That means you have failed to assess them. A mirror selfie is NOT an excuse for neutral scores — you can see the person's face, hair, skin, and body clearly enough to score them. Even if the photo is imperfect, make your best honest assessment. Giving someone 5, 5, 5, 5, 5, 5 is not allowed. The only valid 5 is when a specific body part is literally not in the frame (e.g. body = 5 for a face-only close-up where no torso is visible at all).
 
 You score the PERSON standing in front of the camera. Not the camera. Not the lighting. Not the background.
 
@@ -272,7 +272,7 @@ SCORING SCALE (apply to each person alone, not relative to the other):
 
 WHAT TO SCORE (the person, not the photo):
 - face_card: Bone structure, jawline definition, symmetry, eyes, nose shape — based on actual facial anatomy visible, not photo angle
-- body: Score ONLY based on visible muscle definition, body fat level, and proportions. This category is lighting-resistant — muscle and fat are visible even in dark or moody photos. RULES: Visible abs + muscle definition = 8-9 minimum. Athletic but not shredded = 6-7. Average build = 4-5. Skinny-fat or overweight = 2-3. If no body is visible (face-only photo), score 5 as neutral. Do NOT score body low because the photo is dark or moody.
+- body: Score based on visible muscle definition, body fat, and proportions. Rules by tier: Visible abs + clear muscle definition = 8-9. Lean and athletic with some definition = 6-7. Average/normal build = 4-5. Soft, skinny-fat, or overweight = 2-3. IMPORTANT: A shirtless person showing any visible muscle separation or leanness is at LEAST a 6. Do not score a visibly lean shirtless person below 6 under any circumstances. Only use 5 for body if no torso is visible at all.
 - style: Clothing fit, grooming quality, hairstyle — what the person chose to wear and how they present themselves
 - glow: Actual skin quality visible — score 3-4 only if you can clearly see acne, severe texture, dullness. If lighting is bad but no obvious skin issues are visible, score 5-6.
 - expression: Confidence, energy, charisma, eye contact
