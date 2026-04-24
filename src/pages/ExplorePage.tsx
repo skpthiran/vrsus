@@ -126,6 +126,7 @@ export function ExplorePage() {
                   pageRef.current = 0;
                   setDuels([]);
                   setHasMore(true);
+                  setLoading(true); // trigger re-fetch
                 }
               }}
               className={cn(
