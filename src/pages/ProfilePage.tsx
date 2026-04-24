@@ -130,9 +130,10 @@ export function ProfilePage() {
       if (user?.id) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('display_name, current_streak, best_streak, total_wins, total_duels, avg_score, best_score, country')
+          .select('id, display_name, email, avatar_url, country, total_duels, total_wins, avg_score, best_score, current_streak')
           .eq('id', user.id)
           .single();
+
         setProfile(profileData);
         setDisplayName(profileData?.display_name || user.email?.split('@')[0] || 'User');
         setStreak({
@@ -247,76 +248,62 @@ export function ProfilePage() {
               </div>
             </div>
             
-            {/* Rank Badge */}
-            {profile && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-2xl">{calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).emoji}</span>
-                <div>
-                  <p className={`font-display font-black text-sm ${calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).color}`}>
-                    {calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).rank}
-                  </p>
-                  {calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).nextRank && (
-                    <div className="w-16 h-1 bg-white/10 rounded-full mt-0.5">
-                      <div 
-                        className="h-full bg-accent rounded-full transition-all" 
-                        style={{ width: `${calculateRank(profile.total_duels ?? 0, profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0).progress}%` }} 
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             <Link to="/settings">
-              <button className="flex items-center gap-2 text-sm text-neutral-400 hover:text-foreground transition-colors bg-surface border border-border px-3 py-2 rounded-xl ml-2">
+              <button className="flex items-center gap-2 text-sm text-neutral-400 hover:text-foreground transition-colors bg-surface border border-border px-3 py-2 rounded-xl">
                 <Settings size={15} />
                 <span className="hidden sm:inline">Edit</span>
               </button>
             </Link>
           </div>
 
-
-          {/* Streak Banner */}
-          {streak.current > 0 && (
-            <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/30 rounded-2xl px-5 py-4">
-              <span className="text-3xl">🔥</span>
-              <div>
-                <div className="font-bold text-orange-400 text-lg">
-                  {streak.current} duel streak!
+          {/* Rank + Stats */}
+          {profile && (() => {
+            const winRate = profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0;
+            const rankInfo = calculateRank(profile.total_duels ?? 0, winRate);
+            return (
+              <div className="mb-8 space-y-4">
+                {/* Rank badge */}
+                <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                  <span className="text-3xl">{rankInfo.emoji}</span>
+                  <div className="flex-1">
+                    <p className={`font-display font-black text-xl ${rankInfo.color}`}>{rankInfo.rank}</p>
+                    {rankInfo.nextRank && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 h-1.5 bg-white/10 rounded-full">
+                          <div className="h-full bg-accent rounded-full" style={{ width: `${rankInfo.progress}%` }} />
+                        </div>
+                        <span className="text-white/30 text-xs">→ {rankInfo.nextRank}</span>
+                      </div>
+                    )}
+                  </div>
+                  {winRate > 0 && (
+                    <div className="text-right">
+                      <p className="text-white/40 text-xs">You're top</p>
+                      <p className="text-accent font-bold">{Math.max(1, 100 - winRate)}%</p>
+                    </div>
+                  )}
                 </div>
-                <div className="text-xs text-neutral-400">
-                  Keep uploading high-quality photos to extend it. Best ever: {streak.best}
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Win Rate', value: `${winRate}%`, emoji: '🏆' },
+                    { label: 'Avg Score', value: profile.avg_score ?? 0, emoji: '📊' },
+                    { label: 'Best Score', value: profile.best_score ?? 0, emoji: '⭐' },
+                    { label: 'Streak', value: `${profile.current_streak ?? 0} 🔥`, emoji: '🔥' },
+                  ].map(stat => (
+                    <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                      <p className="text-2xl font-display font-black text-white">{stat.value}</p>
+                      <p className="text-white/40 text-xs mt-1">{stat.label}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
-          {streak.current === 0 && streak.best > 0 && (
-            <div className="flex items-center gap-3 bg-surface border border-border rounded-2xl px-5 py-4">
-              <span className="text-2xl">💀</span>
-              <div>
-                <div className="font-semibold text-neutral-300">Streak broken</div>
-                <div className="text-xs text-neutral-500">Your best streak was {streak.best}. Upload a high-scoring photo to start again.</div>
-              </div>
-            </div>
-          )}
 
-          {/* Stats Grid */}
-          {profile && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { label: 'Win Rate', value: `${profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0}%`, icon: '🏆', color: 'text-yellow-400' },
-                { label: 'Avg Score', value: profile.avg_score ?? 0, icon: '📊', color: 'text-accent' },
-                { label: 'Best Score', value: profile.best_score ?? 0, icon: '⭐', color: 'text-green-400' },
-                { label: '🔥 Streak', value: profile.current_streak ?? 0, icon: '🔥', color: 'text-orange-400' },
-              ].map((stat, i) => (
-                <div key={i} className="bg-surface border border-border rounded-2xl p-4 text-center">
-                  <div className="text-2xl font-display font-black text-white">{stat.value}</div>
-                  <div className="text-xs text-neutral-500 mt-1">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          )}
+
+
 
 
           {/* Recent Duels */}
