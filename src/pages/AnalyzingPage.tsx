@@ -62,9 +62,11 @@ export function AnalyzingPage() {
 
     analyzePhotos(rawA, rawB, mode, user?.id ?? null, challengeOf ?? null)
       .then(async (result) => {
-        // Construct the full result with images
-        const fullResult = {
+        // Always save to sessionStorage as fallback
+        const mappedResult = {
           ...result,
+          reasonsForWin: result.reasons_for_win ?? result.reasonsForWin ?? [],
+          weaknessesOfLoser: result.weaknesses_of_loser ?? result.weaknessesOfLoser ?? [],
           previewA: dataUrlA,
           previewB: dataUrlB,
           mode,
@@ -78,13 +80,12 @@ export function AnalyzingPage() {
         sessionStorage.removeItem('vrsus_pending_mode');
         sessionStorage.removeItem('vrsus_pending_challenge_of');
 
-        // Always save to sessionStorage as fallback
-        sessionStorage.setItem('vrsus_last_result', JSON.stringify(fullResult));
+        sessionStorage.setItem('vrsus_last_result', JSON.stringify(mappedResult));
 
         // Prepare record for local history
         const record: DuelRecord = {
           id: result.id || crypto.randomUUID(),
-          ...fullResult
+          ...mappedResult
         };
         saveToHistory(record);
 
@@ -94,10 +95,10 @@ export function AnalyzingPage() {
           if (user?.id) {
             updateUserStats(user.id);
           }
-          navigate(`/results/${result.id}`, { state: { result: fullResult, userPrediction: predictionRef.current } });
+          navigate(`/results/${result.id}`, { state: { result: mappedResult, userPrediction: predictionRef.current } });
         } else {
           // No ID (guest save failed or not attempted) — navigate with full state
-          navigate('/results/guest', { state: { result: fullResult, userPrediction: predictionRef.current } });
+          navigate('/results/guest', { state: { result: mappedResult, userPrediction: predictionRef.current } });
         }
       })
       .catch(err => {

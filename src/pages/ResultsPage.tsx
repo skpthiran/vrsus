@@ -326,7 +326,7 @@ export function ResultsPage() {
                   Why Photo {result.winner} Wins
                 </h3>
                 <ul className="space-y-3 md:space-y-4">
-                   {(result.reasonsForWin ?? []).map((item: string, i: number) => (
+                   {(result.reasonsForWin ?? result.reasons_for_win ?? []).map((item: string, i: number) => (
                      <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-winner mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
@@ -342,7 +342,7 @@ export function ResultsPage() {
                   Improvement Tips for Photo {loserLetter}
                 </h3>
                 <ul className="space-y-3 md:space-y-4">
-                   {(result.weaknessesOfLoser ?? []).map((item: string, i: number) => (
+                   {(result.weaknessesOfLoser ?? result.weaknesses_of_loser ?? []).map((item: string, i: number) => (
                      <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
