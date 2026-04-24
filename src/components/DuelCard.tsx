@@ -140,7 +140,7 @@ export function DuelCard({
             <span className="text-[10px] font-black px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-md text-white uppercase tracking-wider">{duel.mode}</span>
             {duel.isOwn && <span className="text-[10px] font-black px-2 py-0.5 bg-accent/80 backdrop-blur-md rounded-md text-white uppercase tracking-wider">YOURS</span>}
           </div>
-          {showWinnerReveal && duel.winner === 'A' && (
+          {(!showVoting || voteCounts?.userPick) && duel.winner === 'A' && (
             <>
               <div className="absolute inset-0 border-2 border-yellow-400 z-10 pointer-events-none" />
               <div className="absolute top-2 left-1/2 -translate-x-1/2 text-2xl z-20 animate-bounce">👑</div>
@@ -170,7 +170,7 @@ export function DuelCard({
           <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center z-20">
             <span className="text-xs font-black text-white">B</span>
           </div>
-          {showWinnerReveal && duel.winner === 'B' && (
+          {(!showVoting || voteCounts?.userPick) && duel.winner === 'B' && (
             <>
               <div className="absolute inset-0 border-2 border-yellow-400 z-10 pointer-events-none" />
               <div className="absolute top-2 left-1/2 -translate-x-1/2 text-2xl z-20 animate-bounce">👑</div>
@@ -188,27 +188,31 @@ export function DuelCard({
         <div className="absolute bottom-0 left-0 right-0 p-4 pt-10 flex flex-col gap-3 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
           {/* Score Row */}
           <div className="flex items-center justify-between">
-            <span className={cn(
-              "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
-              showWinnerReveal && duel.winner === 'A' 
-                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
-                : "bg-black/80 text-white border-white/10"
-            )}>
-              {duel.aScore}
-            </span>
+            {(!showVoting || voteCounts?.userPick) && (
+              <span className={cn(
+                "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
+                showWinnerReveal && duel.winner === 'A' 
+                  ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
+                  : "bg-black/80 text-white border-white/10"
+              )}>
+                {duel.aScore}
+              </span>
+            )}
             
-            <span className={cn(
-              "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
-              showWinnerReveal && duel.winner === 'B' 
-                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
-                : "bg-black/80 text-white border-white/10"
-            )}>
-              {duel.bScore}
-            </span>
+            {(!showVoting || voteCounts?.userPick) && (
+              <span className={cn(
+                "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
+                showWinnerReveal && duel.winner === 'B' 
+                  ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
+                  : "bg-black/80 text-white border-white/10"
+              )}>
+                {duel.bScore}
+              </span>
+            )}
           </div>
           
           {/* Description Text */}
-          {duel.reason && (
+          {(!showVoting || voteCounts?.userPick) && duel.reason && (
             <p className="text-white font-medium text-xs line-clamp-1 italic text-center opacity-80 px-2">
               "{duel.reason}"
             </p>
