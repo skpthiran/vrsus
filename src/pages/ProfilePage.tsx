@@ -135,7 +135,9 @@ export function ProfilePage() {
           .single();
 
         setProfile(profileData);
+        console.log('profile state:', profileData);
         setDisplayName(profileData?.display_name || user.email?.split('@')[0] || 'User');
+
         setStreak({
           current: profileData?.current_streak || 0,
           best: profileData?.best_streak || 0,
@@ -256,50 +258,55 @@ export function ProfilePage() {
             </Link>
           </div>
 
-          {/* Rank + Stats */}
-          {profile && (() => {
-            const winRate = profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0;
-            const rankInfo = calculateRank(profile.total_duels ?? 0, winRate);
-            return (
-              <div className="mb-8 space-y-4">
-                {/* Rank badge */}
-                <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl">
-                  <span className="text-3xl">{rankInfo.emoji}</span>
-                  <div className="flex-1">
-                    <p className={`font-display font-black text-xl ${rankInfo.color}`}>{rankInfo.rank}</p>
-                    {rankInfo.nextRank && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 h-1.5 bg-white/10 rounded-full">
-                          <div className="h-full bg-accent rounded-full" style={{ width: `${rankInfo.progress}%` }} />
-                        </div>
-                        <span className="text-white/30 text-xs">→ {rankInfo.nextRank}</span>
+          {/* Stats — ALWAYS render this if profile exists */}
+          {profile && (
+            <div className="mb-8 space-y-4">
+              {/* Rank badge */}
+              {(() => {
+                const winRate = profile.total_duels > 0 ? Math.round((profile.total_wins / profile.total_duels) * 100) : 0;
+                const rankInfo = calculateRank(profile.total_duels ?? 0, winRate);
+                return (
+                  <>
+                    <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                      <span className="text-3xl">{rankInfo.emoji}</span>
+                      <div className="flex-1">
+                        <p className={`font-display font-black text-xl ${rankInfo.color}`}>{rankInfo.rank}</p>
+                        {rankInfo.nextRank && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-1.5 bg-white/10 rounded-full">
+                              <div className="h-full bg-accent rounded-full" style={{ width: `${rankInfo.progress}%` }} />
+                            </div>
+                            <span className="text-white/30 text-xs">→ {rankInfo.nextRank}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  {winRate > 0 && (
-                    <div className="text-right">
-                      <p className="text-white/40 text-xs">You're top</p>
-                      <p className="text-accent font-bold">{Math.max(1, 100 - winRate)}%</p>
+                      {winRate > 0 && (
+                        <div className="text-right">
+                          <p className="text-white/40 text-xs">You're top</p>
+                          <p className="text-accent font-bold">{Math.max(1, 100 - winRate)}%</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                {/* Stats grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: 'Win Rate', value: `${winRate}%`, emoji: '🏆' },
-                    { label: 'Avg Score', value: profile.avg_score ?? 0, emoji: '📊' },
-                    { label: 'Best Score', value: profile.best_score ?? 0, emoji: '⭐' },
-                    { label: 'Streak', value: `${profile.current_streak ?? 0} 🔥`, emoji: '🔥' },
-                  ].map(stat => (
-                    <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                      <p className="text-2xl font-display font-black text-white">{stat.value}</p>
-                      <p className="text-white/40 text-xs mt-1">{stat.label}</p>
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: 'Win Rate', value: `${winRate}%`, emoji: '🏆' },
+                        { label: 'Avg Score', value: profile.avg_score ?? 0, emoji: '📊' },
+                        { label: 'Best Score', value: profile.best_score ?? 0, emoji: '⭐' },
+                        { label: 'Streak', value: `${profile.current_streak ?? 0} 🔥`, emoji: '🔥' },
+                      ].map(stat => (
+                        <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                          <p className="text-2xl font-display font-black text-white">{stat.value}</p>
+                          <p className="text-white/40 text-xs mt-1">{stat.label}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
 
 
 

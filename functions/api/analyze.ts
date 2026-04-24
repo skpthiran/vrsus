@@ -342,11 +342,15 @@ Return ONLY:
 
     // resilient server-side save
     let savedId = null;
-    if (context.env.SUPABASE_URL && context.env.SUPABASE_ANON_KEY) {
-      try {
-        const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_ANON_KEY);
-        
-        const { data, error } = await supabase
+    try {
+      const supabaseUrl = context.env.SUPABASE_URL;
+      const supabaseKey = context.env.SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('[VRSUS] Missing Supabase env vars');
+      } else {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { data: savedDuel, error: saveError } = await supabase
           .from('duels')
           .insert({
             user_id: userId || null,
@@ -361,21 +365,26 @@ Return ONLY:
             image_a_url: `data:image/jpeg;base64,${photoA}`,
             image_b_url: `data:image/jpeg;base64,${photoB}`,
             challenge_of: challengeOf || null,
+            is_public: true,
           })
-          .select('id')
+          .select()
           .single();
 
-        if (error) throw error;
-        if (data) savedId = data.id;
-
-        // If this was a challenge, increment the defenses of the original champion
-        if (challengeOf) {
-          await supabase.rpc('increment_defenses', { duel_id: challengeOf });
+        if (saveError) {
+          console.error('[VRSUS] Duel save failed:', saveError.message);
+        } else if (savedDuel) {
+          savedId = savedDuel.id;
+          
+          // If this was a challenge, increment the defenses of the original champion
+          if (challengeOf) {
+            await supabase.rpc('increment_defenses', { duel_id: challengeOf });
+          }
         }
-      } catch (e) {
-        log('API save failed (graceful): ' + (e as Error).message);
       }
+    } catch (e) {
+      log('API save failed (graceful): ' + (e as Error).message);
     }
+
 
     return Response.json({
       id: savedId,
