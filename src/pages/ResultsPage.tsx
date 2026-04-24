@@ -9,7 +9,7 @@ import { getDuelById } from '../lib/duels';
 
 export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = React.useNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
   const shareCardRef = React.useRef<HTMLDivElement>(null);
   
