@@ -50,11 +50,7 @@ export function ResultsPage() {
         try {
           const data = await getDuelById(id);
           if (data) {
-            setResult({
-              ...data,
-              previewA: data.image_a_url,
-              previewB: data.image_b_url,
-            });
+            setResult(data);
           }
         } catch (err) {
           console.error('Failed to fetch duel:', err);
@@ -324,36 +320,36 @@ export function ResultsPage() {
 
           <div className="grid md:grid-cols-2 gap-4 md:gap-8 pt-8 border-t border-border/50">
              {/* Why Winner Wins */}
-             <div className="space-y-4 md:space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <h3 className="flex items-center gap-2 text-lg md:text-xl font-display font-bold text-white">
                   <CheckCircle2 className="text-winner w-5 h-5" />
                   Why Photo {result.winner} Wins
                 </h3>
                 <ul className="space-y-3 md:space-y-4">
-                   {(result.reasons_for_win ?? []).map((item: string, i: number) => (
+                   {(result.reasonsForWin ?? []).map((item: string, i: number) => (
                      <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-winner mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
                      </li>
                    ))}
                 </ul>
-             </div>
+              </div>
 
              {/* Where Loser Falls Behind & Tips */}
-             <div className="space-y-4 md:space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <h3 className="flex items-center gap-2 text-lg md:text-xl font-display font-bold text-white">
                   <ArrowUpRight className="text-accent w-5 h-5" />
                   Improvement Tips for Photo {loserLetter}
                 </h3>
                 <ul className="space-y-3 md:space-y-4">
-                   {(result.weaknesses_of_loser ?? []).map((item: string, i: number) => (
+                   {(result.weaknessesOfLoser ?? []).map((item: string, i: number) => (
                      <li key={i} className="flex gap-3 text-sm md:text-base text-neutral-300 bg-surface p-3 md:p-4 rounded-xl md:rounded-2xl border border-border">
                         <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0"></div>
                         <span>{item}</span>
                      </li>
                    ))}
                 </ul>
-             </div>
+              </div>
           </div>
 
           {/* Share Card Area */}

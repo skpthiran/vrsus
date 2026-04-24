@@ -117,9 +117,9 @@ export function DuelCard({
         {/* Photo A */}
         <div ref={imgRef} className="relative overflow-hidden">
           <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 overflow-hidden flex items-center justify-center">
-            {visible && (duel.preview_a || duel.imgA) ? (
+            {visible && (duel.previewA || duel.imgA) ? (
               <img 
-                src={duel.preview_a || duel.imgA} 
+                src={duel.previewA || duel.imgA} 
                 alt="A" 
                 className={cn(
                   "w-full h-full object-cover transition-all duration-700", 
@@ -152,9 +152,9 @@ export function DuelCard({
         {/* Photo B */}
         <div className="relative overflow-hidden">
           <div className="w-full h-full bg-gradient-to-br from-neutral-900 to-neutral-800 overflow-hidden flex items-center justify-center">
-            {visible && (duel.preview_b || duel.imgB) ? (
+            {visible && (duel.previewB || duel.imgB) ? (
               <img 
-                src={duel.preview_b || duel.imgB} 
+                src={duel.previewB || duel.imgB} 
                 alt="B" 
                 className={cn(
                   "w-full h-full object-cover transition-all duration-700", 
@@ -195,7 +195,7 @@ export function DuelCard({
                   ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
                   : "bg-black/80 text-white border-white/10"
               )}>
-                {duel.aScore}
+                {duel.scoreA}
               </span>
             )}
             
@@ -206,7 +206,7 @@ export function DuelCard({
                   ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
                   : "bg-black/80 text-white border-white/10"
               )}>
-                {duel.bScore}
+                {duel.scoreB}
               </span>
             )}
           </div>

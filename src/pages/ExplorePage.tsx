@@ -39,16 +39,9 @@ export function ExplorePage() {
       if (next.length < PAGE_SIZE) setHasMore(false);
 
       const mapped = next.map(d => ({
-        id: d.id,
+        ...d,
         mode: d.mode.charAt(0).toUpperCase() + d.mode.slice(1),
-        winner: d.winner,
-        aScore: d.score_a,
-        bScore: d.score_b,
-        imgA: d.preview_a,
-        imgB: d.preview_b,
-        reason: d.summary,
         isOwn: false,
-        createdAt: d.created_at,
       }));
 
       setDuels(prev => [...prev, ...mapped]);

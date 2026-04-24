@@ -11,16 +11,16 @@ export async function saveDuelToSupabase(record: DuelRecord, userId: string): Pr
         winner: record.winner,
         margin: record.margin,
         summary: record.summary,
-        score_a: record.scores.A.total,
-        score_b: record.scores.B.total,
+        score_a: record.scoreA,
+        score_b: record.scoreB,
         scores: record.scores,
-        reasons_for_win: record.reasons_for_win,
-        weaknesses_of_loser: record.weaknesses_of_loser,
+        reasons_for_win: record.reasonsForWin,
+        weaknesses_of_loser: record.weaknessesOfLoser,
         image_a_url: record.previewA,
         image_b_url: record.previewB,
         is_public: true,
         verdict: record.verdict,
-        challenge_of: record.challenge_of,
+        challenge_of: record.challengeOf,
       })
       .select('id')
       .single();
@@ -58,7 +58,7 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, user_id, mode, winner, margin, summary, created_at, is_public, scores, verdict, defenses, challenge_of, preview_a, preview_b, reasons, tips')
+    .select('id, user_id, mode, winner, margin, summary, created_at, is_public, score_a, score_b, scores, verdict, defenses, challenge_of, image_a_url, image_b_url, reasons_for_win, weaknesses_of_loser')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -77,14 +77,16 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
     summary: d.summary,
     createdAt: d.created_at,
     isPublic: d.is_public,
+    scoreA: d.score_a,
+    scoreB: d.score_b,
     scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
     verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
     defenses: d.defenses,
     challengeOf: d.challenge_of,
-    previewA: d.preview_a,
-    previewB: d.preview_b,
-    reasons: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
-    tips: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
+    previewA: d.image_a_url,
+    previewB: d.image_b_url,
+    reasonsForWin: typeof d.reasons_for_win === 'string' ? JSON.parse(d.reasons_for_win) : (d.reasons_for_win || []),
+    weaknessesOfLoser: typeof d.weaknesses_of_loser === 'string' ? JSON.parse(d.weaknesses_of_loser) : (d.weaknesses_of_loser || []),
   }));
 }
 
@@ -93,7 +95,7 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, created_at, mode, winner, margin, summary, scores, verdict, is_public, defenses, challenge_of, preview_a, preview_b, reasons, tips')
+    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, is_public, defenses, challenge_of, image_a_url, image_b_url, reasons_for_win, weaknesses_of_loser')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -110,15 +112,17 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
     winner: d.winner,
     margin: d.margin,
     summary: d.summary,
+    scoreA: d.score_a,
+    scoreB: d.score_b,
     scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
     verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
     isPublic: d.is_public,
     defenses: d.defenses,
     challengeOf: d.challenge_of,
-    previewA: d.preview_a,
-    previewB: d.preview_b,
-    reasons: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
-    tips: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
+    previewA: d.image_a_url,
+    previewB: d.image_b_url,
+    reasonsForWin: typeof d.reasons_for_win === 'string' ? JSON.parse(d.reasons_for_win) : (d.reasons_for_win || []),
+    weaknessesOfLoser: typeof d.weaknesses_of_loser === 'string' ? JSON.parse(d.weaknesses_of_loser) : (d.weaknesses_of_loser || []),
   }));
 }
 
@@ -138,12 +142,14 @@ export async function getDuelById(duelId: string) {
 
   return {
     ...data,
-    image_a_url: data.preview_a,
-    image_b_url: data.preview_b,
+    scoreA: data.score_a,
+    scoreB: data.score_b,
+    previewA: data.image_a_url,
+    previewB: data.image_b_url,
     scores: typeof data.scores === 'string' ? JSON.parse(data.scores) : (data.scores || { A: { total: 0 }, B: { total: 0 } }),
     verdict: typeof data.verdict === 'string' ? JSON.parse(data.verdict) : data.verdict,
-    reasons_for_win: typeof data.reasons === 'string' ? JSON.parse(data.reasons) : (data.reasons || []),
-    weaknesses_of_loser: typeof data.tips === 'string' ? JSON.parse(data.tips) : (data.tips || []),
+    reasonsForWin: typeof data.reasons_for_win === 'string' ? JSON.parse(data.reasons_for_win) : (data.reasons_for_win || []),
+    weaknessesOfLoser: typeof data.weaknesses_of_loser === 'string' ? JSON.parse(data.weaknesses_of_loser) : (data.weaknesses_of_loser || []),
   };
 }
 

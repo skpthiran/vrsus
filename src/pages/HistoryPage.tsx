@@ -30,21 +30,7 @@ export function HistoryPage() {
         const results = await getUserDuels(user.id, page, PAGE_SIZE);
         if (results.length < PAGE_SIZE) setHasMore(false);
 
-        const mapped = results.map(d => ({
-          id: d.id,
-          createdAt: d.createdAt,
-          mode: d.mode,
-          winner: d.winner,
-          margin: d.margin,
-          summary: d.summary,
-          previewA: d.previewA,
-          previewB: d.previewB,
-          scores: d.scores,
-          reasons_for_win: d.reasons,
-          weaknesses_of_loser: d.tips,
-          verdict: d.verdict,
-          isPublic: d.isPublic,
-        }));
+        const mapped = results;
 
         setDuels(prev => [...prev, ...mapped]);
         setPage(prev => prev + 1);
@@ -134,8 +120,8 @@ export function HistoryPage() {
       winner: record.winner,
       margin: record.margin,
       scores: record.scores,
-      reasons_for_win: record.reasons_for_win,
-      weaknesses_of_loser: record.weaknesses_of_loser,
+      reasonsForWin: record.reasonsForWin,
+      weaknessesOfLoser: record.weaknessesOfLoser,
       summary: record.summary,
       previewA: record.previewA,
       previewB: record.previewB,

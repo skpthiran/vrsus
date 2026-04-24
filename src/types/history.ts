@@ -1,20 +1,23 @@
 export interface DuelRecord {
-  id: string;           // crypto.randomUUID()
-  createdAt: string;    // ISO date string
+  id: string;
+  createdAt: string;
   mode: string;
   winner: 'A' | 'B';
   margin: number;
   summary: string;
-  previewA: string;     // full data URL
+  previewA: string;
   previewB: string;
+  scoreA: number;
+  scoreB: number;
   scores: {
-    A: { confidence: number; lighting: number; expression: number; grooming: number; composition: number; presence: number; total: number };
-    B: { confidence: number; lighting: number; expression: number; grooming: number; composition: number; presence: number; total: number };
+    A: { [key: string]: number };
+    B: { [key: string]: number };
   };
-  reasons_for_win: string[];
-  weaknesses_of_loser: string[];
+  reasonsForWin: string[];
+  weaknessesOfLoser: string[];
   verdict?: string;
   isPublic?: boolean;
-  challenge_of?: string; // UUID of the original duel
-  defenses?: number;     // Number of successful defenses
+  challengeOf?: string;
+  defenses?: number;
 }
+
