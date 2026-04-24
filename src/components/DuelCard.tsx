@@ -23,6 +23,11 @@ export function DuelCard({
 }: DuelCardProps) {
   const { user } = useAuth();
   const imgRef = React.useRef<HTMLDivElement>(null);
+  const showWinnerReveal = !!voteCounts?.userPick;
+
+  const totalVotes = (voteCounts?.a ?? 0) + (voteCounts?.b ?? 0);
+  const aPercent = totalVotes === 0 ? 50 : Math.round((voteCounts!.a / totalVotes) * 100);
+  const bPercent = 100 - aPercent;
   const [visible, setVisible] = React.useState(false);
   const [reactions, setReactions] = React.useState({ agree: 0, disagree: 0, fire: 0, userReaction: null as string | null });
   const [showComments, setShowComments] = React.useState(false);
@@ -116,7 +121,10 @@ export function DuelCard({
               <img 
                 src={duel.preview_a || duel.imgA} 
                 alt="A" 
-                className={cn("w-full h-full object-cover transition-all", duel.winner === 'B' ? "opacity-50 grayscale-[40%]" : "")} 
+                className={cn(
+                  "w-full h-full object-cover transition-all duration-700", 
+                  showWinnerReveal && duel.winner === 'B' ? "opacity-30 grayscale-[60%]" : ""
+                )} 
                 loading="lazy"
                 decoding="async"
               />
@@ -124,7 +132,7 @@ export function DuelCard({
               <span className="font-display font-black text-4xl text-white/10 select-none">A</span>
             )}
           </div>
-          <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center z-20">
             <span className="text-xs font-black text-white">A</span>
           </div>
           {/* Combined Top-Left Badge for left side */}
@@ -132,10 +140,11 @@ export function DuelCard({
             <span className="text-[10px] font-black px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-md text-white uppercase tracking-wider">{duel.mode}</span>
             {duel.isOwn && <span className="text-[10px] font-black px-2 py-0.5 bg-accent/80 backdrop-blur-md rounded-md text-white uppercase tracking-wider">YOURS</span>}
           </div>
-          {duel.winner === 'A' && (
+          {showWinnerReveal && duel.winner === 'A' && (
             <>
-              <div className="absolute inset-0 ring-4 ring-inset" style={{ '--tw-ring-color': '#fbbf24' } as any} />
-              <div className="absolute top-2 right-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full z-10 shadow-[0_4px_12px_rgba(251,191,36,0.3)]">👑 WIN</div>
+              <div className="absolute inset-0 border-2 border-yellow-400 z-10 pointer-events-none" />
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 text-2xl z-20 animate-bounce">👑</div>
+              <div className="absolute top-2 right-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-[0_4px_12px_rgba(251,191,36,0.3)]">AI WINNER</div>
             </>
           )}
         </div>
@@ -147,7 +156,10 @@ export function DuelCard({
               <img 
                 src={duel.preview_b || duel.imgB} 
                 alt="B" 
-                className={cn("w-full h-full object-cover transition-all", duel.winner === 'A' ? "opacity-50 grayscale-[40%]" : "")} 
+                className={cn(
+                  "w-full h-full object-cover transition-all duration-700", 
+                  showWinnerReveal && duel.winner === 'A' ? "opacity-30 grayscale-[60%]" : ""
+                )} 
                 loading="lazy"
                 decoding="async"
               />
@@ -155,13 +167,14 @@ export function DuelCard({
               <span className="font-display font-black text-4xl text-white/10 select-none">B</span>
             )}
           </div>
-          <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center z-20">
             <span className="text-xs font-black text-white">B</span>
           </div>
-          {duel.winner === 'B' && (
+          {showWinnerReveal && duel.winner === 'B' && (
             <>
-              <div className="absolute inset-0 ring-4 ring-inset" style={{ '--tw-ring-color': '#fbbf24' } as any} />
-              <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full z-10 shadow-[0_4px_12px_rgba(251,191,36,0.3)]">👑 WIN</div>
+              <div className="absolute inset-0 border-2 border-yellow-400 z-10 pointer-events-none" />
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 text-2xl z-20 animate-bounce">👑</div>
+              <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full z-20 shadow-[0_4px_12px_rgba(251,191,36,0.3)]">AI WINNER</div>
             </>
           )}
         </div>
@@ -177,8 +190,8 @@ export function DuelCard({
           <div className="flex items-center justify-between">
             <span className={cn(
               "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
-              duel.winner === 'A' 
-                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-110" 
+              showWinnerReveal && duel.winner === 'A' 
+                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
                 : "bg-black/80 text-white border-white/10"
             )}>
               {duel.aScore}
@@ -186,8 +199,8 @@ export function DuelCard({
             
             <span className={cn(
               "backdrop-blur-md font-display font-black text-2xl px-4 py-1.5 rounded-xl border transition-all",
-              duel.winner === 'B' 
-                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-110" 
+              showWinnerReveal && duel.winner === 'B' 
+                ? "bg-black/90 text-yellow-400 border-yellow-400/40 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-110" 
                 : "bg-black/80 text-white border-white/10"
             )}>
               {duel.bScore}
@@ -204,37 +217,49 @@ export function DuelCard({
       </div>
 
       {showVoting && (
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-4">
           {!voteCounts?.userPick ? (
-            // Before voting — show the question
-            <div className="flex items-center gap-2">
-              <span className="text-white/50 text-xs font-semibold">WHO WINS?</span>
-              <button
-                onClick={(e) => { e.stopPropagation(); onVote?.('A'); }}
-                className="flex-1 py-2 rounded-xl bg-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all active:scale-95"
-              >
-                A
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onVote?.('B'); }}
-                className="flex-1 py-2 rounded-xl bg-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all active:scale-95"
-              >
-                B
-              </button>
-            </div>
-          ) : (
-            // After voting — show % bar and AI vs People
-            <div className="space-y-2">
-              <div className="flex rounded-full overflow-hidden h-2">
-                <div
-                  className="bg-white/60 transition-all duration-500"
-                  style={{ width: `${voteCounts.a + voteCounts.b === 0 ? 50 : Math.round(voteCounts.a / (voteCounts.a + voteCounts.b) * 100)}%` }}
-                />
-                <div className="bg-accent flex-1" />
+            // Before voting — make the A and B buttons feel like a battle
+            <>
+              <p className="text-center text-white/40 text-xs font-bold tracking-widest uppercase mb-3">⚔️ Who wins?</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onVote?.('A'); }}
+                  className="flex-1 py-3 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-300 font-display font-black text-lg hover:bg-blue-500/40 hover:scale-105 transition-all active:scale-95"
+                >
+                  A
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onVote?.('B'); }}
+                  className="flex-1 py-3 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-300 font-display font-black text-lg hover:bg-red-500/40 hover:scale-105 transition-all active:scale-95"
+                >
+                  B
+                </button>
               </div>
-              <div className="flex justify-between text-xs text-white/50">
-                <span>A {voteCounts.a + voteCounts.b === 0 ? 50 : Math.round(voteCounts.a / (voteCounts.a + voteCounts.b) * 100)}%</span>
-                <span>B {voteCounts.a + voteCounts.b === 0 ? 50 : Math.round(voteCounts.b / (voteCounts.a + voteCounts.b) * 100)}%</span>
+            </>
+          ) : (
+            // After voting — show a red vs green battle bar with energy
+            <div className="space-y-2">
+              <div className="flex rounded-full overflow-hidden h-3 gap-0.5">
+                <div
+                  className="bg-gradient-to-r from-green-500 to-green-400 transition-all duration-700 ease-out rounded-l-full"
+                  style={{ width: `${aPercent}%` }}
+                />
+                <div
+                  className="bg-gradient-to-r from-red-400 to-red-500 transition-all duration-700 ease-out flex-1 rounded-r-full"
+                />
+              </div>
+              <div className="flex justify-between items-center text-xs font-bold">
+                <span className="text-green-400">A {aPercent}%</span>
+                <div className="flex flex-col items-center">
+                  <span className="text-white/30 text-[10px]">👥 {totalVotes} votes</span>
+                  {voteCounts.userPick === duel.winner ? (
+                    <span className="text-green-400 text-[10px] animate-pulse">✅ You picked right!</span>
+                  ) : (
+                    <span className="text-white/40 text-[10px]">😬 AI disagreed with you</span>
+                  )}
+                </div>
+                <span className="text-red-400">{bPercent}% B</span>
               </div>
             </div>
           )}
