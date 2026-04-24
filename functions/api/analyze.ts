@@ -39,6 +39,15 @@ function extractJSON(text: string): string {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
+
+  // Debug check for environment variables and payload
+  console.log('[VRSUS] ENV CHECK:', {
+    hasSupabaseUrl: !!env.SUPABASE_URL,
+    hasSupabaseKey: !!env.SUPABASE_ANON_KEY,
+    hasOpenRouter: !!env.OPENROUTER_API_KEY,
+    userId: (await request.clone().json().catch(() => ({}))).userId,
+  });
+
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -346,27 +355,26 @@ Return ONLY:
     // resilient server-side save
     let savedId = null;
     try {
-      if (!supabaseUrl || !supabaseKey) {
-        console.error('[VRSUS] Missing Supabase env vars');
-      } else {
+      if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
         
         const duelPayload = {
           user_id: userId || null,
-          mode,
+          mode: mode || 'general',
           winner: judgment.winner,
           margin: judgment.margin,
           summary: judgment.winning_edge,
+          verdict: JSON.stringify(judgment.verdict),
           score_a: judgment.scores.A.total,
           score_b: judgment.scores.B.total,
-          scores: judgment.scores,
-          reasons_for_win: judgment.reasons_for_win,
-          weaknesses_of_loser: tips.weaknesses_of_loser,
-          verdict: judgment.verdict,
-          image_a_url: `data:image/jpeg;base64,${photoA}`,
-          image_b_url: `data:image/jpeg;base64,${photoB}`,
-          challenge_of: challengeOf || null,
+          scores: JSON.stringify(judgment.scores),
+          tips: JSON.stringify(tips.weaknesses_of_loser),
+          reasons: JSON.stringify(judgment.reasons_for_win),
+          preview_a: `data:image/jpeg;base64,${photoA}`,
+          preview_b: `data:image/jpeg;base64,${photoB}`,
           is_public: true,
+          challenge_of: challengeOf || null,
+          defenses: 0,
         };
 
         const { data: savedDuel, error: saveError } = await supabase
@@ -386,9 +394,11 @@ Return ONLY:
             await supabase.rpc('increment_defenses', { duel_id: challengeOf });
           }
         }
+      } else {
+        console.error('[VRSUS] Missing Supabase config for save');
       }
-    } catch (e) {
-      log('API save failed (graceful): ' + (e as Error).message);
+    } catch (err: any) {
+      console.error('[VRSUS] SAVE CRASHED:', err.message, err.stack);
     }
 
 

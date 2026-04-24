@@ -58,7 +58,7 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, user_id, mode, winner, margin, summary, score_a, score_b, created_at, is_public, scores, verdict, defenses, challenge_of, preview_a:image_a_url, preview_b:image_b_url')
+    .select('id, user_id, mode, winner, margin, summary, created_at, is_public, scores, verdict, defenses, challenge_of, preview_a, preview_b, reasons, tips')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -67,7 +67,14 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
     console.error('getPublicDuels error:', error);
     return [];
   }
-  return data || [];
+  
+  return (data || []).map(d => ({
+    ...d,
+    image_a_url: d.preview_a,
+    image_b_url: d.preview_b,
+    reasons_for_win: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
+    weaknesses_of_loser: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
+  }));
 }
 
 export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
@@ -75,7 +82,7 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
   const to = from + pageSize - 1;
   const { data, error } = await supabase
     .from('duels')
-    .select('id, created_at, mode, winner, margin, summary, score_a, score_b, scores, verdict, is_public, reasons_for_win, weaknesses_of_loser, defenses, challenge_of, preview_a:image_a_url, preview_b:image_b_url')
+    .select('id, created_at, mode, winner, margin, summary, scores, verdict, is_public, defenses, challenge_of, preview_a, preview_b, reasons, tips')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -84,9 +91,12 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
   
   return (data || []).map(d => ({
     ...d,
-    scores: d.scores || { A: { total: 0 }, B: { total: 0 } },
-    reasons_for_win: d.reasons_for_win || [],
-    weaknesses_of_loser: d.weaknesses_of_loser || [],
+    image_a_url: d.preview_a,
+    image_b_url: d.preview_b,
+    scores: typeof d.scores === 'string' ? JSON.parse(d.scores) : (d.scores || { A: { total: 0 }, B: { total: 0 } }),
+    verdict: typeof d.verdict === 'string' ? JSON.parse(d.verdict) : d.verdict,
+    reasons_for_win: typeof d.reasons === 'string' ? JSON.parse(d.reasons) : (d.reasons || []),
+    weaknesses_of_loser: typeof d.tips === 'string' ? JSON.parse(d.tips) : (d.tips || []),
   }));
 }
 
@@ -106,9 +116,12 @@ export async function getDuelById(duelId: string) {
 
   return {
     ...data,
-    scores: data.scores || { A: { total: 0 }, B: { total: 0 } },
-    reasons_for_win: data.reasons_for_win || [],
-    weaknesses_of_loser: data.weaknesses_of_loser || [],
+    image_a_url: data.preview_a,
+    image_b_url: data.preview_b,
+    scores: typeof data.scores === 'string' ? JSON.parse(data.scores) : (data.scores || { A: { total: 0 }, B: { total: 0 } }),
+    verdict: typeof data.verdict === 'string' ? JSON.parse(data.verdict) : data.verdict,
+    reasons_for_win: typeof data.reasons === 'string' ? JSON.parse(data.reasons) : (data.reasons || []),
+    weaknesses_of_loser: typeof data.tips === 'string' ? JSON.parse(data.tips) : (data.tips || []),
   };
 }
 
@@ -227,7 +240,21 @@ export async function getWeeklyLeaderboard() {
   const map: Record<string, { display_name: string; best_score: number; total_duels: number }> = {};
   for (const d of data || []) {
     const uid = d.user_id;
-    const best = Math.max(d.score_a || 0, d.score_b || 0);
+    if (!uid) continue;
+    
+    // Support both direct columns and JSON scores
+    let sa = d.score_a;
+    let sb = d.score_b;
+    
+    if (sa === null || sb === null) {
+      const s = typeof d.scores === 'string' ? JSON.parse(d.scores) : d.scores;
+      if (s) {
+        sa = s.A?.total || 0;
+        sb = s.B?.total || 0;
+      }
+    }
+    
+    const best = Math.max(sa || 0, sb || 0);
     const name = (d.profiles as any)?.display_name || 'Anonymous';
     if (!map[uid]) map[uid] = { display_name: name, best_score: 0, total_duels: 0 };
     if (best > map[uid].best_score) map[uid].best_score = best;
