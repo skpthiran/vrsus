@@ -1,9 +1,13 @@
+import { createClient } from '@supabase/supabase-js';
+
 const log = (msg: string) => console.log(`[VRSUS] ${msg}`);
 
 interface Env {
   OPENROUTER_API_KEY: string;
   GROQ_API_KEY: string;
   CEREBRAS_API_KEY: string;
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
 }
 
 function extractJSON(text: string): string {
@@ -46,7 +50,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   try {
     const body = await context.request.json() as any;
-    const { photoA, photoB, mode = 'general' } = body;
+    const { photoA, photoB, mode = 'general', userId, challengeOf } = body;
 
     if (!photoA || !photoB) {
       return Response.json({ error: 'Both photoA and photoB are required' }, { status: 400, headers: corsHeaders });
@@ -336,7 +340,45 @@ Return ONLY:
     }
     log('Stage 3 complete');
 
+    // resilient server-side save
+    let savedId = null;
+    if (context.env.SUPABASE_URL && context.env.SUPABASE_ANON_KEY) {
+      try {
+        const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_ANON_KEY);
+        
+        const { data, error } = await supabase
+          .from('duels')
+          .insert({
+            user_id: userId || null,
+            mode,
+            winner: judgment.winner,
+            margin: judgment.margin,
+            summary: judgment.winning_edge,
+            scores: judgment.scores,
+            reasons_for_win: judgment.reasons_for_win,
+            weaknesses_of_loser: tips.weaknesses_of_loser,
+            verdict: judgment.verdict,
+            image_a_url: `data:image/jpeg;base64,${photoA}`,
+            image_b_url: `data:image/jpeg;base64,${photoB}`,
+            challenge_of: challengeOf || null,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        if (data) savedId = data.id;
+
+        // If this was a challenge, increment the defenses of the original champion
+        if (challengeOf) {
+          await supabase.rpc('increment_defenses', { duel_id: challengeOf });
+        }
+      } catch (e) {
+        log('API save failed (graceful): ' + (e as Error).message);
+      }
+    }
+
     return Response.json({
+      id: savedId,
       winner: judgment.winner,
       margin: judgment.margin,
       scores: judgment.scores,

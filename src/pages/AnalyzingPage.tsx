@@ -58,35 +58,17 @@ export function AnalyzingPage() {
       setStepIndex(prev => (prev < steps.length - 1 ? prev + 1 : prev));
     }, 2000); // 2s per step for a smoother feel
 
-    // 3. Run Analysis Pipeline
-    analyzePhotos(rawA, rawB, mode)
+    analyzePhotos(rawA, rawB, mode, user?.id, challengeOf)
       .then(async (result) => {
-        // Prepare record for persistence
-        const record: DuelRecord = {
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          mode,
-          winner: result.winner,
-          margin: result.margin,
-          summary: result.summary,
+        // Construct the full result with images
+        const fullResult = {
+          ...result,
           previewA: dataUrlA,
           previewB: dataUrlB,
-          scores: result.scores,
-          reasons_for_win: result.reasons_for_win,
-          weaknesses_of_loser: result.weaknesses_of_loser,
-          verdict: result.verdict,
+          mode,
           challenge_of: challengeOf,
+          createdAt: new Date().toISOString()
         };
-
-        // Persistent save to local history
-        saveToHistory(record);
-
-        // Save to Supabase if logged in
-        let dbId = record.id;
-        if (user) {
-          const savedId = await saveDuelToSupabase(record, user.id);
-          if (savedId) dbId = savedId;
-        }
 
         // Cleanup pending photos
         sessionStorage.removeItem('vrsus_pending_a');
@@ -94,17 +76,23 @@ export function AnalyzingPage() {
         sessionStorage.removeItem('vrsus_pending_mode');
         sessionStorage.removeItem('vrsus_pending_challenge_of');
 
-        // Store result for Results page
-        sessionStorage.setItem('vrsus_last_result', JSON.stringify({
-          ...result,
-          previewA: dataUrlA,
-          previewB: dataUrlB,
-        }));
+        // Always save to sessionStorage as fallback
+        sessionStorage.setItem('vrsus_last_result', JSON.stringify(fullResult));
 
-        // Give the animation a tiny bit more time if it was too fast
-        setTimeout(() => {
-          navigate(`/results/${dbId}`, { state: { userPrediction: predictionRef.current } });
-        }, 800);
+        // Prepare record for local history
+        const record: DuelRecord = {
+          id: result.id || crypto.randomUUID(),
+          ...fullResult
+        };
+        saveToHistory(record);
+
+        // Then try to navigate to persistent URL if we have an ID
+        if (result.id) {
+          navigate(`/results/${result.id}`, { state: { result: fullResult, userPrediction: predictionRef.current } });
+        } else {
+          // No ID (guest save failed or not attempted) — navigate with full state
+          navigate('/results/guest', { state: { result: fullResult, userPrediction: predictionRef.current } });
+        }
       })
       .catch(err => {
         console.error('Analysis pipeline failed:', err);

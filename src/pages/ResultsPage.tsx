@@ -22,12 +22,21 @@ export function ResultsPage() {
     async function loadResult() {
       setLoading(true);
       
-      // 1. Try session storage first (fastest)
+      // 1. Handle guest mode
+      if (id === 'guest') {
+        const guestResult = location.state?.result || JSON.parse(sessionStorage.getItem('vrsus_last_result') || 'null');
+        if (guestResult) {
+          setResult(guestResult);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Try session storage for specific ID
       const cached = sessionStorage.getItem('vrsus_last_result');
       if (cached) {
         const parsed = JSON.parse(cached);
-        // If we have an ID in URL, it must match the cached one
-        if (!id || parsed.id === id) {
+        if (parsed.id === id) {
           setResult(parsed);
           setLoading(false);
           return;
@@ -152,7 +161,32 @@ export function ResultsPage() {
               <span>This champion has defended {result.defenses} time{result.defenses !== 1 ? 's' : ''}</span>
             </motion.div>
           )}
-       </div>
+        </div>
+
+        {/* Guest Banner */}
+        {!user && id === 'guest' && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto mb-8 bg-blue-500/10 border border-blue-500/20 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left"
+          >
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400">
+                <Info size={24} />
+              </div>
+              <div>
+                <h4 className="text-blue-400 font-bold">Guest Mode</h4>
+                <p className="text-blue-400/70 text-sm">This result is only saved in your browser. Create an account to save your history.</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => navigate('/auth')}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20"
+            >
+              Sign Up Now
+            </button>
+          </motion.div>
+        )}
 
        {userPrediction && result && (
          <div className="max-w-4xl mx-auto mb-8">
