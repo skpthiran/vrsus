@@ -8,6 +8,8 @@ interface Env {
   CEREBRAS_API_KEY: string;
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
 }
 
 function extractJSON(text: string): string {
@@ -40,12 +42,15 @@ function extractJSON(text: string): string {
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL || '';
+  const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || '';
+
   // Debug check for environment variables and payload
   console.log('[VRSUS] ENV CHECK:', {
-    hasSupabaseUrl: !!env.SUPABASE_URL,
-    hasSupabaseKey: !!env.SUPABASE_ANON_KEY,
+    hasSupabaseUrl: !!supabaseUrl,
+    hasSupabaseKey: !!supabaseKey,
+    urlSource: env.SUPABASE_URL ? 'SUPABASE_URL' : env.VITE_SUPABASE_URL ? 'VITE_SUPABASE_URL' : 'none',
     hasOpenRouter: !!env.OPENROUTER_API_KEY,
-    userId: (await request.clone().json().catch(() => ({}))).userId,
   });
 
   const corsHeaders = {
@@ -54,8 +59,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  const supabaseUrl = env.SUPABASE_URL;
-  const supabaseKey = env.SUPABASE_ANON_KEY;
+  // supabaseUrl and supabaseKey are already defined above with fallbacks
   const openrouterKey = env.OPENROUTER_API_KEY;
   const groqKey = env.GROQ_API_KEY;
   const cerebrasKey = env.CEREBRAS_API_KEY;
