@@ -9,6 +9,7 @@ import { getDuelById } from '../lib/duels';
 import { useAuth } from '../contexts/AuthContext';
 import ShareCard from '../components/ShareCard';
 import { captureShareCard, shareOrDownload } from '../lib/shareCard';
+import { updateChampionAfterDuel } from '../lib/leaderboard';
 
 export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +66,24 @@ export function ResultsPage() {
 
     loadResult();
   }, [id]);
+
+  // Champion Update Logic
+  React.useEffect(() => {
+    if (!result || !result.id) return;
+    
+    const challengeOf = sessionStorage.getItem('vrsus_pending_challenge_of');
+    if (challengeOf && id === result.id) {
+      const challengerId = result.user_id;
+      if (challengerId) {
+        const scoreA = result.scores?.A?.total || 0;
+        const scoreB = result.scores?.B?.total || 0;
+        const challengerWon = result.winner === 'A' ? scoreA > scoreB : scoreB > scoreA;
+        
+        updateChampionAfterDuel(result.id, challengerId, challengerWon, challengeOf);
+        sessionStorage.removeItem('vrsus_pending_challenge_of');
+      }
+    }
+  }, [result, id]);
 
   if (loading) return (
     <div className="flex-1 flex flex-col items-center justify-center p-8">

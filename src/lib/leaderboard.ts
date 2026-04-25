@@ -74,17 +74,27 @@ export async function getCurrentChampion(): Promise<ChampionData | null> {
 }
 
 export async function getTopScores(limit = 10): Promise<TopDuel[]> {
-  const { data, error } = await supabase
-    .from('duels')
-    .select(`
-      id, user_id, score_a, score_b, winner,
-      image_a_url, image_b_url, summary, created_at
-    `)
-    .eq('is_public', true)
-    .order('score_a', { ascending: false })
-    .limit(100);
+  // Fetch top by score_a AND top by score_b, merge both sets
+  const [resA, resB] = await Promise.all([
+    supabase
+      .from('duels')
+      .select('id, user_id, score_a, score_b, winner, image_a_url, image_b_url, summary, created_at')
+      .eq('is_public', true)
+      .order('score_a', { ascending: false })
+      .limit(100),
+    supabase
+      .from('duels')
+      .select('id, user_id, score_a, score_b, winner, image_a_url, image_b_url, summary, created_at')
+      .eq('is_public', true)
+      .order('score_b', { ascending: false })
+      .limit(100),
+  ]);
 
-  if (error || !data) return [];
+  const combined = [...(resA.data || []), ...(resB.data || [])];
+  // Deduplicate by duel id
+  const deduped = Array.from(new Map(combined.map(d => [d.id, d])).values());
+  const data = deduped;
+  if (!data.length) return [];
 
   // Get top score per user (their best duel)
   const seen = new Set<string>();

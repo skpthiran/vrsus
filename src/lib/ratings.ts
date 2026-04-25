@@ -21,22 +21,19 @@ export async function getRatingPool(limit = 30): Promise<RatePhoto[]> {
 
   if (error || !data) return [];
 
-  // Get already-rated duel IDs from localStorage
-  const rated = JSON.parse(localStorage.getItem('vrsus_rated') || '[]') as string[];
+  // Track by photo URL so both photos from a duel can be rated independently
+  const ratedPhotos = JSON.parse(localStorage.getItem('vrsus_rated_photos') || '[]') as string[];
 
   const pool: RatePhoto[] = [];
   for (const d of data) {
-    if (rated.includes(d.id)) continue;
-    // Add both photos from each duel
-    if (d.image_a_url) {
+    if (d.image_a_url && !ratedPhotos.includes(d.image_a_url)) {
       pool.push({ duelId: d.id, photoUrl: d.image_a_url, winner: d.winner, side: 'A' });
     }
-    if (d.image_b_url) {
+    if (d.image_b_url && !ratedPhotos.includes(d.image_b_url)) {
       pool.push({ duelId: d.id, photoUrl: d.image_b_url, winner: d.winner, side: 'B' });
     }
   }
 
-  // Shuffle the pool
   return pool.sort(() => Math.random() - 0.5);
 }
 
@@ -53,22 +50,36 @@ export async function submitRating(
     score,
   });
 
-  // Mark duel as rated in localStorage
-  const rated = JSON.parse(localStorage.getItem('vrsus_rated') || '[]') as string[];
-  if (!rated.includes(duelId)) {
-    rated.push(duelId);
-    localStorage.setItem('vrsus_rated', JSON.stringify(rated));
+  // Track by photo URL — each photo is rated independently
+  const ratedPhotos = JSON.parse(localStorage.getItem('vrsus_rated_photos') || '[]') as string[];
+  if (!ratedPhotos.includes(photoUrl)) {
+    ratedPhotos.push(photoUrl);
+    localStorage.setItem('vrsus_rated_photos', JSON.stringify(ratedPhotos));
   }
 }
 
 export async function getUserAvgRating(userId: string): Promise<number | null> {
-  const { data } = await supabase
+  // Get all duels belonging to this user
+  const { data: duels } = await supabase
+    .from('duels')
+    .select('image_a_url, image_b_url')
+    .eq('user_id', userId)
+    .eq('is_public', true);
+
+  if (!duels || duels.length === 0) return null;
+
+  // Collect all photo URLs from this user's duels
+  const photoUrls = duels.flatMap(d => [d.image_a_url, d.image_b_url].filter(Boolean));
+  if (photoUrls.length === 0) return null;
+
+  // Get all ratings for those photos
+  const { data: ratingRows } = await supabase
     .from('ratings')
     .select('score')
-    .eq('user_id', userId);
+    .in('photo_url', photoUrls);
 
-  if (!data || data.length === 0) return null;
-  const avg = data.reduce((sum, r) => sum + r.score, 0) / data.length;
+  if (!ratingRows || ratingRows.length === 0) return null;
+  const avg = ratingRows.reduce((sum, r) => sum + r.score, 0) / ratingRows.length;
   return Math.round(avg * 10) / 10;
 }
 
