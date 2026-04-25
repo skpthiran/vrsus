@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Swords, History, Compass, User, Trophy, Flame } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Swords, History, Compass, Trophy, Flame } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -10,11 +10,11 @@ const NAV_ITEMS = [
   { path: '/explore', label: 'Explore', icon: Compass },
   { path: '/rate', label: 'Rate', icon: Flame },
   { path: '/leaderboard', label: 'Ranks', icon: Trophy },
-  { path: '/profile', label: 'Profile', icon: User },
 ];
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isLanding = location.pathname === '/';
   const { user, signOut } = useAuth();
 
@@ -51,9 +51,20 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm">
-                  {user.email?.[0].toUpperCase()}
-                </div>
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="w-9 h-9 rounded-full overflow-hidden border-2 border-transparent hover:border-white/30 transition-all flex-shrink-0"
+                >
+                  {user?.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" alt="Profile" />
+                  ) : (
+                    <div className="w-full h-full bg-accent flex items-center justify-center">
+                      <span className="text-white font-black text-sm">
+                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
+                </button>
                 <button onClick={signOut} className="text-sm text-neutral-400 hover:text-foreground transition-colors">
                   Sign out
                 </button>
@@ -80,9 +91,18 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <span className="font-display font-bold tracking-tight">VRSUS</span>
           </Link>
           {user ? (
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm">
-              {user.email?.[0].toUpperCase()}
-            </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-8 h-8 rounded-full overflow-hidden bg-accent flex items-center justify-center border border-white/10"
+            >
+              {user?.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <span className="text-white font-black text-sm">
+                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              )}
+            </button>
           ) : (
             <Link to="/auth" className="text-sm font-semibold text-foreground bg-surface border border-border px-3 py-1.5 rounded-full">
               Sign In
@@ -99,7 +119,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom navigation */}
       {!isLanding && (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border">
-          <div className="grid grid-cols-5 h-16">
+          <div className="grid grid-cols-6 h-16">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
             const active = location.pathname.startsWith(item.path);
@@ -108,7 +128,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 transition-colors",
+                  "flex flex-col items-center justify-center gap-1 transition-colors relative",
                   active ? "text-foreground" : "text-neutral-500"
                 )}
               >
@@ -118,6 +138,27 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          {/* Mobile Profile Tab */}
+          <button
+            onClick={() => navigate('/profile')}
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 transition-colors relative",
+              location.pathname.startsWith('/profile') ? "text-foreground" : "text-neutral-500"
+            )}
+          >
+            <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20">
+              {user?.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="w-full h-full bg-accent flex items-center justify-center">
+                  <span className="text-white font-black text-xs">
+                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+              )}
+            </div>
+            {location.pathname.startsWith('/profile') && <div className="absolute bottom-0 w-8 h-0.5 bg-accent rounded-full" />}
+          </button>
           </div>
         </nav>
       )}
