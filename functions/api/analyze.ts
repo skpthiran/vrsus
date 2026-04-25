@@ -271,10 +271,10 @@ SCORING SCALE (apply to each person alone, not relative to the other):
 - 9-10: Model tier. Reserved for elite genetics only.
 
 WHAT TO SCORE (the person, not the photo):
-- face_card: Bone structure, jawline definition, symmetry, eyes, nose shape — based on actual facial anatomy visible, not photo angle
+- face_card: Assess bone structure, jawline definition, symmetry, eye shape, nose, and overall facial harmony. Even when two people look superficially similar, there are always real differences — one will have a sharper jaw, wider eyes, better symmetry, stronger nose bridge, or more defined cheekbones. Look hard and find the real difference. Never give two different people the exact same face_card score — there is always a winner and a loser on facial structure.
 - body: Score based on visible muscle definition, body fat, and proportions. Rules by tier: Visible abs + clear muscle definition = 8-9. Lean and athletic with some definition = 6-7. Average/normal build = 4-5. Soft, skinny-fat, or overweight = 2-3. IMPORTANT: A shirtless person showing any visible muscle separation or leanness is at LEAST a 6. Do not score a visibly lean shirtless person below 6 under any circumstances. Only use 5 for body if no torso is visible at all.
 - style: Clothing fit, grooming quality, hairstyle — what the person chose to wear and how they present themselves
-- glow: Actual skin quality visible — score 3-4 only if you can clearly see acne, severe texture, dullness. If lighting is bad but no obvious skin issues are visible, score 5-6.
+- glow: Score actual skin health — visible acne, severe scarring, extremely uneven tone = 3-4. Healthy skin with no obvious issues = 6-7. Radiant clear skin = 8-9. CRITICAL: Dark gym lighting, indoor mirror lighting, and flash reflections are NOT skin flaws. Only score glow below 5 if you can clearly see actual skin problems on the person's face — not shadows, not lighting artifacts. When in doubt in a dark gym photo, default to 5-6 for glow unless acne or scarring is unmistakably visible.
 - expression: Confidence, energy, charisma, eye contact
 - aura: Overall magnetism — would a stranger look twice at this person specifically?
 
