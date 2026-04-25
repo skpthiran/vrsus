@@ -28,6 +28,8 @@ export default function RatePage() {
   const [animating, setAnimating] = useState(false);
   const [direction, setDirection] = useState<'rate' | 'skip'>('rate');
   const [reveal, setReveal] = useState<{ avg: number; total: number; yourScore: number } | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [sessionScores, setSessionScores] = useState<number[]>([]);
 
   useEffect(() => {
     getRatingPool(50).then(data => {
@@ -45,7 +47,10 @@ export default function RatePage() {
 
     // Submit rating
     await submitRating(current.duelId, current.photoUrl, score, user?.id || null);
-    setRated(r => r + 1);
+    const newRated = rated + 1;
+    setRated(newRated);
+    const newScores = [...sessionScores, score];
+    setSessionScores(newScores);
 
     // Fetch community average (includes the vote just submitted)
     const community = await getPhotoAvgRating(current.photoUrl);
@@ -58,6 +63,14 @@ export default function RatePage() {
     // Auto-advance after 1.8 seconds
     setTimeout(() => {
       setReveal(null);
+
+      // Every 10 ratings — show summary
+      if (newRated % 10 === 0) {
+        setShowSummary(true);
+        setSubmitting(false);
+        return;
+      }
+
       setAnimating(true);
       setTimeout(() => {
         if (index + 1 >= pool.length) {
@@ -69,6 +82,35 @@ export default function RatePage() {
         setSubmitting(false);
       }, 300);
     }, 1800);
+  };
+
+  const handleContinue = () => {
+    setShowSummary(false);
+    setAnimating(true);
+    setTimeout(() => {
+      if (index + 1 >= pool.length) {
+        setDone(true);
+      } else {
+        setIndex(i => i + 1);
+      }
+      setAnimating(false);
+    }, 300);
+  };
+
+  const getSummaryStats = () => {
+    if (sessionScores.length === 0) return null;
+    const avg = Math.round((sessionScores.reduce((a, b) => a + b, 0) / sessionScores.length) * 10) / 10;
+    const highest = Math.max(...sessionScores);
+    const lowest = Math.min(...sessionScores);
+    const aboveAvg = sessionScores.filter(s => s >= 7).length;
+    let tasteType = '';
+    let tasteEmoji = '';
+    if (avg >= 7.5) { tasteType = 'Easy Rater'; tasteEmoji = '😍'; }
+    else if (avg >= 6) { tasteType = 'Generous Judge'; tasteEmoji = '😊'; }
+    else if (avg >= 4.5) { tasteType = 'Balanced Critic'; tasteEmoji = '⚖️'; }
+    else if (avg >= 3) { tasteType = 'Tough Judge'; tasteEmoji = '😤'; }
+    else { tasteType = 'Savage'; tasteEmoji = '💀'; }
+    return { avg, highest, lowest, aboveAvg, tasteType, tasteEmoji };
   };
 
   const handleSkip = () => {
@@ -89,6 +131,63 @@ export default function RatePage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (showSummary) {
+    const stats = getSummaryStats();
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center px-6 text-center">
+        {/* Title */}
+        <div className="mb-8">
+          <div className="text-5xl mb-3">{stats?.tasteEmoji}</div>
+          <h2 className="font-display font-black text-3xl text-white">
+            {rated} Ratings Done
+          </h2>
+          <p className="text-neutral-500 text-sm mt-1">Here's your taste profile so far</p>
+        </div>
+
+        {/* Taste type badge */}
+        <div className="bg-accent/10 border border-accent/30 rounded-2xl px-6 py-3 mb-8">
+          <p className="text-accent font-black text-xl">{stats?.tasteType}</p>
+          <p className="text-neutral-500 text-xs mt-0.5">Your rating personality</p>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-8">
+          <div className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
+            <div className="font-black text-2xl text-white">{stats?.avg}</div>
+            <div className="text-neutral-500 text-xs mt-0.5">Avg you give</div>
+          </div>
+          <div className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
+            <div className="font-black text-2xl text-lime-400">{stats?.highest}</div>
+            <div className="text-neutral-500 text-xs mt-0.5">Highest</div>
+          </div>
+          <div className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
+            <div className="font-black text-2xl text-red-400">{stats?.lowest}</div>
+            <div className="text-neutral-500 text-xs mt-0.5">Lowest</div>
+          </div>
+        </div>
+
+        {/* Hot picks stat */}
+        <p className="text-neutral-400 text-sm mb-10">
+          You rated <span className="text-white font-bold">{stats?.aboveAvg}</span> out of {rated} people a 7 or above
+        </p>
+
+        {/* Continue button */}
+        <button
+          onClick={handleContinue}
+          className="w-full max-w-sm bg-accent text-white font-black py-4 rounded-2xl text-lg hover:opacity-90 transition-opacity mb-3"
+        >
+          Keep Rating 🔥
+        </button>
+        <button
+          onClick={() => navigate('/explore')}
+          className="text-neutral-500 font-bold text-sm hover:text-white transition-colors"
+        >
+          Browse Explore
+        </button>
       </div>
     );
   }
