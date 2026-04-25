@@ -30,12 +30,12 @@ export function SettingsPage() {
     if (!user?.id) { navigate('/auth'); return; }
     supabase
       .from('profiles')
-      .select('display_name, country, settings')
+      .select('username, country, settings')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data) {
-          setDisplayName(data.display_name || '');
+          setDisplayName(data.username || '');
           setCountry(data.country || 'Unknown');
           setSettings({ ...DEFAULT_SETTINGS, ...(data.settings || {}) });
         }
@@ -50,7 +50,7 @@ export function SettingsPage() {
     await supabase
       .from('profiles')
       .update({ 
-        display_name: displayName, 
+        username: displayName, 
         country: country,
         settings 
       })
@@ -123,7 +123,7 @@ export function SettingsPage() {
 
             <div className="bg-surface border border-border rounded-2xl p-6 space-y-6">
               <div>
-                <label className="block text-sm font-semibold mb-2">Display Name</label>
+                <label className="block text-sm font-semibold mb-2">Username</label>
                 <input
                   type="text"
                   value={displayName}

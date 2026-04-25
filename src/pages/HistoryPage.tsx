@@ -18,7 +18,19 @@ export function HistoryPage() {
   const pageRef = React.useRef(0);
   const [hasMore, setHasMore] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = React.useState<string | null>(null);
+  const [clearConfirm, setClearConfirm] = React.useState(false);
   const PAGE_SIZE = 6;
+
+  React.useEffect(() => {
+    if (deleteConfirmId || clearConfirm) {
+      const timer = setTimeout(() => {
+        setDeleteConfirmId(null);
+        setClearConfirm(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [deleteConfirmId, clearConfirm]);
 
   const loadMore = React.useCallback(async (isInitial = false) => {
     if (loadingMore || (!hasMore && !isInitial)) return;
@@ -28,22 +40,18 @@ export function HistoryPage() {
     const currentPage = pageRef.current;
     
     if (user?.id) {
-      console.log(`[History] Loading DB history for user: ${user.id}, page: ${currentPage}`);
       try {
         const results = await getUserDuels(user.id, currentPage, PAGE_SIZE);
-        console.log(`[History] page: ${currentPage}, fetched: ${results.length}`);
         
         if (results.length < PAGE_SIZE) setHasMore(false);
 
         setDuels(prev => isInitial ? results : [...prev, ...results]);
         pageRef.current += 1;
       } catch (error) {
-        console.error("[VRSUS] Failed to load DB history:", error);
         if (currentPage === 0) setDuels(getHistory());
         setHasMore(false);
       }
     } else {
-      console.log('[VRSUS] No user ID, loading guest history from local storage');
       if (currentPage === 0) setDuels(getHistory());
       setHasMore(false);
     }
@@ -64,8 +72,12 @@ export function HistoryPage() {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (!window.confirm('Delete this duel?')) return;
+    if (deleteConfirmId !== id) {
+      setDeleteConfirmId(id);
+      return;
+    }
 
+    setDeleteConfirmId(null);
     // Optimistically remove from UI
     setDuels(prev => prev.filter(r => r.id !== id));
 
@@ -73,7 +85,7 @@ export function HistoryPage() {
       try {
         await deleteDuel(id);
       } catch (err) {
-        console.error('Failed to delete from DB:', err);
+        // Silent catch
       }
     }
     
@@ -82,8 +94,12 @@ export function HistoryPage() {
   };
 
   const handleClear = async () => {
-    if (!window.confirm('Are you sure you want to clear all history?')) return;
+    if (!clearConfirm) {
+      setClearConfirm(true);
+      return;
+    }
 
+    setClearConfirm(false);
     if (user?.id) {
       try {
         const { error } = await supabase
@@ -92,7 +108,7 @@ export function HistoryPage() {
           .eq('user_id', user.id);
         if (error) throw error;
       } catch (err) {
-        console.error('Failed to clear DB history:', err);
+        // Silent catch
       }
     }
 
@@ -137,8 +153,12 @@ export function HistoryPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-display font-bold">History</h1>
         {duels.length > 0 && (
-          <Button variant="ghost" onClick={handleClear} className="text-neutral-400 hover:text-red-400">
-            <Trash2 size={18} className="mr-2" /> Clear All
+          <Button 
+            variant="ghost" 
+            onClick={handleClear} 
+            className={cn("transition-all", clearConfirm ? "text-red-500 font-bold bg-red-500/10" : "text-neutral-400 hover:text-red-400")}
+          >
+            <Trash2 size={18} className="mr-2" /> {clearConfirm ? "Confirm?" : "Clear All"}
           </Button>
         )}
       </div>
@@ -175,6 +195,7 @@ export function HistoryPage() {
               key={record.id} 
               record={record} 
               onDelete={handleDelete} 
+              deleteConfirmId={deleteConfirmId}
               onTogglePrivacy={handleTogglePrivacy}
               onClick={() => handleViewResult(record)} 
             />
@@ -186,9 +207,10 @@ export function HistoryPage() {
   );
 }
 
-function DuelCardInternal({ record, onDelete, onTogglePrivacy, onClick }: { 
+function DuelCardInternal({ record, onDelete, deleteConfirmId, onTogglePrivacy, onClick }: { 
   record: DuelRecord, 
   onDelete: (e: React.MouseEvent, id: string) => void, 
+  deleteConfirmId: string | null,
   onTogglePrivacy: (e: React.MouseEvent, id: string, current: boolean) => void,
   onClick: () => void,
   key?: any 
@@ -236,9 +258,15 @@ function DuelCardInternal({ record, onDelete, onTogglePrivacy, onClick }: {
         </button>
         <button 
           onClick={(e) => onDelete(e, record.id)}
-          className="p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-400 hover:text-red-400 transition-all"
+          className={cn(
+            "p-2 backdrop-blur-md border rounded-full transition-all flex items-center gap-1.5",
+            deleteConfirmId === record.id 
+              ? "bg-red-500 border-red-500 text-white px-3" 
+              : "bg-black/60 border-white/10 text-neutral-400 hover:text-red-400"
+          )}
         >
           <Trash2 size={16} />
+          {deleteConfirmId === record.id && <span className="text-[10px] font-black uppercase">Confirm?</span>}
         </button>
       </div>
 

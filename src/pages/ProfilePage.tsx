@@ -132,13 +132,12 @@ export function ProfilePage() {
       if (user?.id) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('id, display_name, email, avatar_url, country, total_duels, total_wins, avg_score, best_score, current_streak, best_streak')
+          .select('id, username, email, avatar_url, country, total_duels, total_wins, avg_score, best_score, current_streak, best_streak')
           .eq('id', user.id)
           .single();
 
         setProfile(profileData);
-        console.log('profile state:', profileData);
-        setDisplayName(profileData?.display_name || user.email?.split('@')[0] || 'User');
+        setDisplayName(profileData?.username || user.email?.split('@')[0] || 'User');
 
         setStreak({
           current: profileData?.current_streak || 0,

@@ -253,7 +253,7 @@ export async function getWeeklyLeaderboard() {
   if (error) throw error;
 
   // Aggregate per user
-  const map: Record<string, { display_name: string; best_score: number }> = {};
+  const map: Record<string, { username: string; best_score: number; total_duels: number }> = {};
   for (const d of data || []) {
     const uid = d.user_id;
     if (!uid) continue;

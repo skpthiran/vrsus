@@ -55,15 +55,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   onClick={() => navigate('/profile')}
                   className="w-9 h-9 rounded-full overflow-hidden border-2 border-transparent hover:border-white/30 transition-all flex-shrink-0"
                 >
-                  {user?.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" alt="Profile" />
-                  ) : (
-                    <div className="w-full h-full bg-accent flex items-center justify-center">
-                      <span className="text-white font-black text-sm">
-                        {user?.email?.charAt(0).toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                  )}
+                  <div className="w-full h-full bg-accent flex items-center justify-center">
+                    <span className="text-white font-black text-sm">
+                      {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
                 </button>
                 <button onClick={signOut} className="text-sm text-neutral-400 hover:text-foreground transition-colors">
                   Sign out
@@ -95,13 +91,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               onClick={() => navigate('/profile')}
               className="w-8 h-8 rounded-full overflow-hidden bg-accent flex items-center justify-center border border-white/10"
             >
-              {user?.user_metadata?.avatar_url ? (
-                <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" alt="" />
-              ) : (
-                <span className="text-white font-black text-sm">
-                  {user?.email?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              )}
+              <span className="text-white font-black text-sm">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </span>
             </button>
           ) : (
             <Link to="/auth" className="text-sm font-semibold text-foreground bg-surface border border-border px-3 py-1.5 rounded-full">
@@ -147,15 +139,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             )}
           >
             <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20">
-              {user?.user_metadata?.avatar_url ? (
-                <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" alt="" />
-              ) : (
                 <div className="w-full h-full bg-accent flex items-center justify-center">
                   <span className="text-white font-black text-xs">
                     {user?.email?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
-              )}
             </div>
             {location.pathname.startsWith('/profile') && <div className="absolute bottom-0 w-8 h-0.5 bg-accent rounded-full" />}
           </button>

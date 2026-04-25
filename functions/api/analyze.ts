@@ -92,15 +92,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Debug check for environment variables and payload
-  console.log('[VRSUS] ENV CHECK:', {
-    hasSupabaseUrl: !!supabaseUrl,
-    hasSupabaseKey: !!supabaseKey,
-    urlSource: env.SUPABASE_URL ? 'SUPABASE_URL' : 
-               env.VITE_SUPABASE_URL ? 'VITE_SUPABASE_URL' : 
-               env.NEXT_PUBLIC_SUPABASE_URL ? 'NEXT_PUBLIC_SUPABASE_URL' :
-               env.PUBLIC_SUPABASE_URL ? 'PUBLIC_SUPABASE_URL' : 'none',
-    hasOpenRouter: !!env.OPENROUTER_API_KEY,
-  });
+
 
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -116,7 +108,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
     const body = await request.json() as any;
     const { photoA, photoB, mode = 'general', userId, challengeOf } = body;
-    console.log('[VRSUS] Request Body:', { mode, userId, challengeOf, hasPhotoA: !!photoA, hasPhotoB: !!photoB });
+
 
     if (!photoA || !photoB) {
       return Response.json({ error: 'Both photoA and photoB are required' }, { status: 400, headers: corsHeaders });
@@ -226,7 +218,7 @@ Return ONLY: {"better":"A","gap":7,"reason":"Person A has sharper bone structure
         },
       ];
       const anchorRaw = await openrouterFetch('google/gemini-2.0-flash-001', anchorMessages, 300);
-      log('Anchor Pass raw response: ' + anchorRaw.slice(0, 500));
+
       anchorVerdict = JSON.parse(extractJSON(anchorRaw));
       log(`Anchor: ${anchorVerdict.better} wins by gap ${anchorVerdict.gap} — ${anchorVerdict.reason}`);
     } catch (err: any) {
@@ -299,7 +291,7 @@ Return ONLY:
     let visualScores: any;
     try {
       const raw1 = await openrouterFetch('google/gemini-2.0-flash-001', stage1Messages, 800);
-      log('Stage 1 raw response: ' + raw1.slice(0, 500));
+
       visualScores = JSON.parse(extractJSON(raw1));
       
       // Enforce anchor direction — if anchor says A wins but Stage 1 raw scores say B, flip the nudge
@@ -386,7 +378,7 @@ Respond only with valid JSON.`,
           () => cerebraseFetch(stage2Messages, 800),
         ]
       );
-      log('Stage 2 raw response: ' + raw2.slice(0, 500));
+
       judgment = JSON.parse(extractJSON(raw2));
     } catch (err: any) {
       log('Stage 2 PARSE FAILED: ' + err.message);
@@ -433,7 +425,7 @@ Respond only with valid JSON.`,
           () => cerebraseFetch(stage3Messages, 800),
         ]
       );
-      log('Stage 3 raw response: ' + raw3.slice(0, 500));
+
       tips = JSON.parse(extractJSON(raw3));
     } catch (err: any) {
       log('Stage 3 PARSE FAILED: ' + err.message);
@@ -465,8 +457,7 @@ Respond only with valid JSON.`,
           `${timestamp}_b_${crypto.randomUUID()}.jpg`
         );
 
-        console.log('[VRSUS] Image A URL:', imageAUrl);
-        console.log('[VRSUS] Image B URL:', imageBUrl);
+
 
         const duelPayload = {
           user_id: userId || null,
@@ -494,24 +485,32 @@ Respond only with valid JSON.`,
           .single();
         
         if (saveError) {
-          console.error('[VRSUS] Duel save failed. Payload keys:', Object.keys(duelPayload));
-          console.error('[VRSUS] Duel save error message:', saveError.message);
-          console.error('[VRSUS] Duel save error details:', saveError.details);
-          console.error('[VRSUS] Duel save error hint:', saveError.hint);
+
         } else if (savedDuel) {
           savedId = savedDuel.id;
-          console.log('[VRSUS] Duel saved successfully:', savedId);
+
           
           // If this was a challenge, increment the defenses of the original champion
           if (challengeOf) {
-            await supabase.rpc('increment_defenses', { duel_id: challengeOf });
+            const { data: currentDuel } = await supabase
+              .from('duels')
+              .select('defenses')
+              .eq('id', challengeOf)
+              .single();
+            
+            if (currentDuel) {
+              await supabase
+                .from('duels')
+                .update({ defenses: (currentDuel.defenses || 0) + 1 })
+                .eq('id', challengeOf);
+            }
           }
         }
       } else {
-        console.error('[VRSUS] Missing Supabase config for save');
+
       }
     } catch (err: any) {
-      console.error('[VRSUS] SAVE CRASHED:', err.message, err.stack);
+
     }
 
 

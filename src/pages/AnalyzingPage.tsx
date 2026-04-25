@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { analyzePhotos } from '../lib/api';
-import { saveDuelToSupabase } from '../lib/duels';
+
 import { updateUserStats } from '../lib/stats';
 
 import { saveToHistory } from '../lib/history';
@@ -71,6 +71,7 @@ export function AnalyzingPage() {
           previewB: dataUrlB,
           mode,
           challenge_of: challengeOf,
+          challengeOf: challengeOf,
           createdAt: new Date().toISOString()
         };
 

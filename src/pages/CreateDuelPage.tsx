@@ -9,7 +9,7 @@ import { cn } from '../lib/utils';
 import { saveToHistory } from '../lib/history';
 import { DuelRecord } from '../types/history';
 import { useAuth } from '../contexts/AuthContext';
-import { saveDuelToSupabase } from '../lib/duels';
+
 
 interface PhotoSlot {
   preview: string | null;
