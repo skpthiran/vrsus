@@ -31,13 +31,30 @@ export default function RatePage() {
   const [showSummary, setShowSummary] = useState(false);
   const [sessionScores, setSessionScores] = useState<number[]>([]);
 
+  const preloadImage = (url: string) => {
+    const img = new Image();
+    img.src = url;
+  };
+
   useEffect(() => {
-    getRatingPool(50).then(data => {
-      setPool(data);
+    getRatingPool(10).then(async initial => {
+      if (initial.length === 0) { setDone(true); setLoading(false); return; }
+      setPool(initial);
       setLoading(false);
-      if (data.length === 0) setDone(true);
+      // Preload first photo immediately
+      if (initial[0]?.photoUrl) preloadImage(initial[0].photoUrl);
+
+      // Fetch full pool in background
+      const full = await getRatingPool(50);
+      setPool(full);
     });
   }, []);
+
+  // Preload next 2 photos whenever index changes
+  useEffect(() => {
+    if (pool[index + 1]?.photoUrl) preloadImage(pool[index + 1].photoUrl);
+    if (pool[index + 2]?.photoUrl) preloadImage(pool[index + 2].photoUrl);
+  }, [index, pool]);
 
   const current = pool[index];
 
@@ -267,6 +284,7 @@ export default function RatePage() {
               className="w-full h-full object-cover object-top"
               alt="Rate this"
               loading="eager"
+              decoding="async"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
