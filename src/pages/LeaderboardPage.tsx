@@ -9,6 +9,7 @@ import {
   challengeChampion,
   ChampionData,
   LeaderboardEntry,
+  TopDuel,
 } from '../lib/leaderboard';
 
 const tabs = [
@@ -23,62 +24,46 @@ export default function LeaderboardPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('champion');
   const [champion, setChampion] = useState<ChampionData | null>(null);
+  const [topDuels, setTopDuels] = useState<TopDuel[]>([]);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [challengeStatus, setChallengeStatus] = useState<string | null>(null);
+  const [challengeMsg, setChallengeMsg] = useState<string | null>(null);
 
   const loadTab = useCallback(async (tab: string) => {
     setLoading(true);
-    setEntries([]);
     try {
       if (tab === 'champion') {
-        const data = await getCurrentChampion();
-        setChampion(data);
+        setChampion(await getCurrentChampion());
       } else if (tab === 'top_scores') {
-        const data = await getTopScores();
-        setEntries(data);
+        setTopDuels(await getTopScores(10));
       } else if (tab === 'most_wins') {
-        const data = await getMostWins();
-        setEntries(data);
+        setEntries(await getMostWins(10));
       } else if (tab === 'this_week') {
-        const data = await getThisWeek();
-        setEntries(data);
+        setEntries(await getThisWeek(10));
       }
-    } catch (err) {
-      console.error('[Leaderboard] load error:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadTab(activeTab);
-  }, [activeTab, loadTab]);
+  useEffect(() => { loadTab(activeTab); }, [activeTab, loadTab]);
 
   const handleChallenge = async () => {
     if (!user || !champion) return;
-    setChallengeStatus('Checking eligibility...');
+    setChallengeMsg('Checking eligibility...');
     const result = await challengeChampion(champion.userId, user.id);
     if (!result.canChallenge) {
-      setChallengeStatus(result.reason || 'Cannot challenge right now.');
+      setChallengeMsg(result.reason || 'Cannot challenge.');
       return;
     }
-    // Navigate to analyze page with challenge mode
-    navigate('/duel', { 
-      state: { 
-        challengeMode: true, 
+    navigate('/analyze', {
+      state: {
+        challengeMode: true,
         championUserId: champion.userId,
         championBestDuelId: result.championBestDuelId,
         championPhoto: champion.bestPhoto,
-      } 
+      },
     });
-  };
-
-  const getRankStyle = (rank: number) => {
-    if (rank === 1) return 'text-yellow-400 font-black text-xl';
-    if (rank === 2) return 'text-gray-300 font-bold text-lg';
-    if (rank === 3) return 'text-amber-600 font-bold text-lg';
-    return 'text-white/40 font-medium';
   };
 
   const getRankIcon = (rank: number) => {
@@ -91,23 +76,21 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-black text-white pb-24">
       {/* Header */}
-      <div className="px-4 pt-8 pb-4">
-        <h1 className="font-display font-black text-3xl text-white tracking-tight">
-          LEADERBOARD
-        </h1>
+      <div className="px-4 pt-8 pb-2">
+        <h1 className="font-display font-black text-3xl tracking-tight">LEADERBOARD</h1>
         <p className="text-white/40 text-sm mt-1">Who's running the game</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 px-4 mb-6 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 px-4 py-4 overflow-x-auto scrollbar-hide">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all ${
               activeTab === tab.id
                 ? 'bg-yellow-400 text-black'
-                : 'bg-white/10 text-white/60 hover:bg-white/20'
+                : 'bg-white/10 text-white/50 hover:bg-white/15'
             }`}
           >
             {tab.label}
@@ -121,165 +104,218 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <>
-          {/* Champion Tab */}
+          {/* ── CHAMPION TAB ── */}
           {activeTab === 'champion' && (
             <div className="px-4">
               {champion ? (
-                <div className="space-y-4">
-                  {/* Champion Card */}
-                  <div className="relative rounded-2xl overflow-hidden border border-yellow-400/30 bg-gradient-to-b from-yellow-400/10 to-black">
-                    {champion.bestPhoto && (
-                      <div className="relative h-80">
-                        <img
-                          src={champion.bestPhoto}
-                          className="w-full h-full object-cover object-top"
-                          alt="Champion"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                        <div className="absolute top-4 left-4 bg-yellow-400 text-black text-xs font-black px-3 py-1 rounded-full">
-                          👑 REIGNING CHAMPION
-                        </div>
+                <div className="rounded-2xl overflow-hidden border border-yellow-400/40 bg-neutral-950">
+                  {/* Hero Photo */}
+                  <div className="relative h-72 bg-neutral-900">
+                    {champion.bestPhoto ? (
+                      <img src={champion.bestPhoto} className="w-full h-full object-cover object-top" alt="Champion" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-white/10 font-black text-8xl">👑</span>
                       </div>
                     )}
-                    <div className="p-5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h2 className="font-display font-black text-2xl text-white">
-                            {champion.username}
-                          </h2>
-                          <p className="text-white/50 text-sm mt-0.5">
-                            Crowned {new Date(champion.crownedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-yellow-400 font-black text-3xl">
-                            {champion.bestScore}
-                          </div>
-                          <div className="text-white/40 text-xs">best score</div>
-                        </div>
-                      </div>
-
-                      {/* Stats Row */}
-                      <div className="grid grid-cols-3 gap-3 mt-4">
-                        <div className="bg-white/5 rounded-xl p-3 text-center">
-                          <div className="text-white font-black text-xl">{champion.totalWins}</div>
-                          <div className="text-white/40 text-xs mt-0.5">total wins</div>
-                        </div>
-                        <div className="bg-white/5 rounded-xl p-3 text-center">
-                          <div className="text-yellow-400 font-black text-xl">{champion.defenses}</div>
-                          <div className="text-white/40 text-xs mt-0.5">defenses</div>
-                        </div>
-                        <div className="bg-white/5 rounded-xl p-3 text-center">
-                          <div className="text-white font-black text-xl">{champion.bestScore}</div>
-                          <div className="text-white/40 text-xs mt-0.5">peak score</div>
-                        </div>
-                      </div>
-
-                      {/* Challenge Button */}
-                      {user && user.id !== champion.userId && (
-                        <div className="mt-4">
-                          <button
-                            onClick={handleChallenge}
-                            className="w-full bg-yellow-400 text-black font-black py-3 rounded-xl text-sm hover:bg-yellow-300 transition-colors"
-                          >
-                            ⚔️ CHALLENGE CHAMPION
-                          </button>
-                          {challengeStatus && (
-                            <p className="text-white/50 text-xs text-center mt-2">{challengeStatus}</p>
-                          )}
-                          <p className="text-white/30 text-xs text-center mt-1">
-                            Requires 3+ duels to challenge
-                          </p>
-                        </div>
-                      )}
-                      {user && user.id === champion.userId && (
-                        <div className="mt-4 bg-yellow-400/10 border border-yellow-400/30 rounded-xl p-3 text-center">
-                          <p className="text-yellow-400 font-bold text-sm">
-                            👑 You are the champion. Defend your title.
-                          </p>
-                        </div>
-                      )}
-                      {!user && (
-                        <button
-                          onClick={() => navigate('/auth')}
-                          className="w-full mt-4 bg-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/20 transition-colors"
-                        >
-                          Sign in to Challenge
-                        </button>
-                      )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/30 to-transparent" />
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-yellow-400 text-black text-xs font-black px-3 py-1.5 rounded-full">
+                        👑 REIGNING CHAMPION
+                      </span>
                     </div>
+                    {champion.defenses > 0 && (
+                      <div className="absolute top-4 right-4">
+                        <span className="bg-black/60 text-yellow-400 text-xs font-bold px-3 py-1.5 rounded-full border border-yellow-400/30">
+                          🛡️ {champion.defenses} defenses
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-5">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {champion.avatarUrl ? (
+                          <img src={champion.avatarUrl} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                          <span className="text-yellow-400 font-black text-sm">
+                            {champion.username.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h2 className="font-black text-xl text-white">{champion.username}</h2>
+                        <p className="text-white/40 text-xs">
+                          Champion since {new Date(champion.crownedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-2 mb-5">
+                      {[
+                        { label: 'Peak Score', value: champion.bestScore, gold: true },
+                        { label: 'Total Wins', value: champion.totalWins, gold: false },
+                        { label: 'Defenses', value: champion.defenses, gold: false },
+                      ].map(stat => (
+                        <div key={stat.label} className="bg-white/5 rounded-xl p-3 text-center">
+                          <div className={`font-black text-2xl ${stat.gold ? 'text-yellow-400' : 'text-white'}`}>
+                            {stat.value}
+                          </div>
+                          <div className="text-white/30 text-xs mt-0.5">{stat.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* CTA */}
+                    {!user && (
+                      <button onClick={() => navigate('/auth')}
+                        className="w-full bg-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/15 transition-colors">
+                        Sign in to Challenge
+                      </button>
+                    )}
+                    {user && user.id === champion.userId && (
+                      <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-xl p-3 text-center">
+                        <p className="text-yellow-400 font-bold text-sm">👑 You hold the crown. Defend it.</p>
+                      </div>
+                    )}
+                    {user && user.id !== champion.userId && (
+                      <div>
+                        <button onClick={handleChallenge}
+                          className="w-full bg-yellow-400 text-black font-black py-3.5 rounded-xl text-sm hover:bg-yellow-300 transition-colors">
+                          ⚔️ CHALLENGE CHAMPION
+                        </button>
+                        {challengeMsg && (
+                          <p className="text-white/40 text-xs text-center mt-2">{challengeMsg}</p>
+                        )}
+                        <p className="text-white/20 text-xs text-center mt-1">Requires 3+ duels</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-20 text-white/40">
-                  <div className="text-4xl mb-3">👑</div>
-                  <p className="font-bold">No champion yet</p>
+                <div className="text-center py-24 text-white/30">
+                  <div className="text-5xl mb-3">👑</div>
+                  <p className="font-bold text-white/50">No champion yet</p>
                   <p className="text-sm mt-1">Win duels to claim the throne</p>
                 </div>
               )}
             </div>
           )}
 
-          {/* List Tabs */}
-          {activeTab !== 'champion' && (
-            <div className="px-4 space-y-3">
-              {entries.length === 0 ? (
-                <div className="text-center py-20 text-white/40">
-                  <p className="font-bold">No data yet</p>
-                  <p className="text-sm mt-1">Run some duels to get on the board</p>
+          {/* ── TOP SCORES TAB — Duel Cards ── */}
+          {activeTab === 'top_scores' && (
+            <div className="px-4 space-y-4">
+              {topDuels.length === 0 ? (
+                <div className="text-center py-24 text-white/30">
+                  <p className="font-bold text-white/50">No scored duels yet</p>
                 </div>
-              ) : (
-                entries.map((entry) => (
-                  <div
-                    key={entry.userId}
-                    className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
-                      entry.rank <= 3
-                        ? 'bg-white/5 border-white/20'
-                        : 'bg-white/[0.02] border-white/5'
-                    }`}
-                  >
-                    {/* Rank */}
-                    <div className={`w-10 text-center flex-shrink-0 ${getRankStyle(entry.rank)}`}>
-                      {getRankIcon(entry.rank)}
+              ) : topDuels.map((duel, i) => (
+                <div key={duel.id} className="rounded-2xl overflow-hidden border border-white/10 bg-neutral-950">
+                  {/* Rank Badge */}
+                  <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{getRankIcon(i + 1)}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                          {duel.avatarUrl ? (
+                            <img src={duel.avatarUrl} className="w-full h-full object-cover" alt="" />
+                          ) : (
+                            <span className="text-white/40 text-xs font-bold">
+                              {duel.username.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-white/60 text-sm font-semibold">{duel.username}</span>
+                      </div>
                     </div>
+                    <span className="text-yellow-400 font-black text-lg">{duel.topScore} pts</span>
+                  </div>
 
-                    {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {entry.avatarUrl ? (
-                        <img src={entry.avatarUrl} className="w-full h-full object-cover" alt="" />
+                  {/* Photo Side by Side */}
+                  <div className="grid grid-cols-2 gap-0.5 mx-4 rounded-xl overflow-hidden">
+                    <div className="relative aspect-[3/4] bg-neutral-900">
+                      {duel.previewA ? (
+                        <img src={duel.previewA} className="w-full h-full object-cover" alt="A" />
                       ) : (
-                        <span className="text-white/40 font-bold text-sm">
-                          {entry.username.charAt(0).toUpperCase()}
-                        </span>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-white/10 font-black text-4xl">A</span>
+                        </div>
                       )}
-                    </div>
-
-                    {/* Name + Stats */}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-white truncate">{entry.username}</div>
-                      <div className="text-white/40 text-xs mt-0.5">
-                        {activeTab === 'top_scores' && `Best score: ${entry.bestScore}`}
-                        {activeTab === 'most_wins' && `${entry.totalDuels} duels · ${entry.winRate}% win rate`}
-                        {activeTab === 'this_week' && `${entry.totalDuels} duels this week`}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                        <div className={`font-black text-xl ${duel.winner === 'A' ? 'text-yellow-400' : 'text-white/40'}`}>
+                          {duel.scoreA}
+                          {duel.winner === 'A' && <span className="text-xs ml-1">👑</span>}
+                        </div>
                       </div>
                     </div>
-
-                    {/* Main Stat */}
-                    <div className="text-right flex-shrink-0">
-                      <div className="font-black text-xl text-yellow-400">
-                        {activeTab === 'top_scores' && entry.bestScore}
-                        {activeTab === 'most_wins' && entry.totalWins}
-                        {activeTab === 'this_week' && entry.totalWins}
-                      </div>
-                      <div className="text-white/30 text-xs">
-                        {activeTab === 'top_scores' && 'pts'}
-                        {activeTab === 'most_wins' && 'wins'}
-                        {activeTab === 'this_week' && 'wins'}
+                    <div className="relative aspect-[3/4] bg-neutral-900">
+                      {duel.previewB ? (
+                        <img src={duel.previewB} className="w-full h-full object-cover" alt="B" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-white/10 font-black text-4xl">B</span>
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                        <div className={`font-black text-xl ${duel.winner === 'B' ? 'text-yellow-400' : 'text-white/40'}`}>
+                          {duel.scoreB}
+                          {duel.winner === 'B' && <span className="text-xs ml-1">👑</span>}
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))
-              )}
+
+                  {/* Summary */}
+                  {duel.summary && (
+                    <p className="px-4 py-3 text-white/40 text-xs italic">"{duel.summary}"</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── MOST WINS + THIS WEEK TABS ── */}
+          {(activeTab === 'most_wins' || activeTab === 'this_week') && (
+            <div className="px-4 space-y-2">
+              {entries.length === 0 ? (
+                <div className="text-center py-24 text-white/30">
+                  <p className="font-bold text-white/50">No data yet</p>
+                  <p className="text-sm mt-1">Run some duels to get on the board</p>
+                </div>
+              ) : entries.map((entry) => (
+                <div key={entry.userId}
+                  className={`flex items-center gap-4 p-4 rounded-xl border ${
+                    entry.rank <= 3 ? 'border-white/15 bg-white/5' : 'border-white/5 bg-white/[0.02]'
+                  }`}>
+                  <div className="w-8 text-center flex-shrink-0 font-black text-base">
+                    {getRankIcon(entry.rank)}
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {entry.avatarUrl ? (
+                      <img src={entry.avatarUrl} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <span className="text-white/40 font-bold">
+                        {entry.username.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-white truncate">{entry.username}</div>
+                    <div className="text-white/30 text-xs mt-0.5">
+                      {activeTab === 'most_wins'
+                        ? `${entry.totalDuels} duels · ${entry.winRate}% win rate`
+                        : `${entry.totalDuels} duels this week`}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-black text-2xl text-yellow-400">{entry.totalWins}</div>
+                    <div className="text-white/30 text-xs">wins</div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </>
