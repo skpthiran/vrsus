@@ -245,6 +245,7 @@ You score the PERSON standing in front of the camera. Not the camera. Not the li
 You NEVER give identical total scores to two different people — but the gap must come from REAL differences in the humans, not artificial inflation. If two people are genuinely similar in attractiveness, a 5-8 point gap in totals is honest. Do NOT force a 15-20 point gap if it isn't real.
 
 Be brutal about genuine flaws: weak jawline, visible acne, poor muscle definition, bad grooming, asymmetry, low confidence. Call these out directly by name.
+CONSISTENCY RULE: Your scores must reflect the observation text. If you write "Strength: sharp defined jawline" for someone, their face_card cannot be below 7. If you write "Weakness: visible acne across cheeks", their glow cannot be above 4. The numbers and the words must match — never contradict your own observation in the scores.
 Respond only with valid JSON.`,
       },
       {
@@ -310,10 +311,17 @@ Return ONLY:
         log('Anchor and Stage 1 disagree — enforcing anchor direction');
         const anchorWinner = anchorVerdict.better;
         const anchorLoser = anchorWinner === 'A' ? 'B' : 'A';
-        visualScores[anchorWinner].aura = Math.min(10, visualScores[anchorWinner].aura + 3);
-        visualScores[anchorWinner].face_card = Math.min(10, visualScores[anchorWinner].face_card + 2);
-        visualScores[anchorLoser].aura = Math.max(1, visualScores[anchorLoser].aura - 3);
-        visualScores[anchorLoser].glow = Math.max(1, visualScores[anchorLoser].glow - 2);
+        // Scale nudge to anchor confidence: gap 1-3 = small nudge, gap 4-7 = medium, gap 8-10 = strong
+        const nudgeStrength = anchorVerdict.gap <= 3 ? 1 : anchorVerdict.gap <= 7 ? 2 : 3;
+
+        // Only nudge categories that are close — don't artificially inflate already-strong scores
+        const nudgeUp = (score: number, amount: number) => Math.min(9, score + amount); // cap at 9, never force a 10
+        const nudgeDown = (score: number, amount: number) => Math.max(2, score - amount); // floor at 2, never force a 1
+
+        visualScores[anchorWinner].aura = nudgeUp(visualScores[anchorWinner].aura, nudgeStrength);
+        visualScores[anchorWinner].face_card = nudgeUp(visualScores[anchorWinner].face_card, nudgeStrength - 1);
+        visualScores[anchorLoser].aura = nudgeDown(visualScores[anchorLoser].aura, nudgeStrength);
+        visualScores[anchorLoser].glow = nudgeDown(visualScores[anchorLoser].glow, nudgeStrength - 1);
       }
 
       const finalTotalA = Object.entries(visualScores.A)
@@ -327,8 +335,8 @@ Return ONLY:
         log('Scores still too close — applying final spread nudge');
         const winner = anchorVerdict.better;
         const loser = winner === 'A' ? 'B' : 'A';
-        visualScores[winner].aura = Math.min(10, visualScores[winner].aura + 1);
-        visualScores[loser].glow = Math.max(1, visualScores[loser].glow - 1);
+        visualScores[winner].aura = Math.min(9, visualScores[winner].aura + 1);
+        visualScores[loser].glow = Math.max(2, visualScores[loser].glow - 1);
       }
       
       log('Stage 1 complete');
@@ -336,9 +344,17 @@ Return ONLY:
       console.error('STAGE 1 GEMINI ERROR:', err);
       log('Stage 1 PARSE FAILED: ' + err.message);
       visualScores = {
-        A: { face_card: 4, body: 5, style: 4, glow: 5, expression: 4, aura: 4, observation: 'Fallback logic: Photo A has significant visible facial weaknesses.' },
-        B: { face_card: 8, body: 7, style: 8, glow: 7, expression: 8, aura: 8, observation: 'Fallback logic: Photo B displays superior structure and presence.' },
+        A: { face_card: 5, body: 5, style: 5, glow: 5, expression: 5, aura: 5, observation: 'Gender: Unknown. Strength: Unable to assess — using neutral fallback. Weakness: Unable to assess — using neutral fallback.' },
+        B: { face_card: 5, body: 5, style: 5, glow: 5, expression: 5, aura: 5, observation: 'Gender: Unknown. Strength: Unable to assess — using neutral fallback. Weakness: Unable to assess — using neutral fallback.' },
       };
+
+      // Apply anchor direction to neutral fallback so winner is still determined correctly
+      const fbWinner = anchorVerdict.better;
+      const fbLoser = fbWinner === 'A' ? 'B' : 'A';
+      visualScores[fbWinner].face_card = 6;
+      visualScores[fbWinner].aura = 6;
+      visualScores[fbLoser].face_card = 4;
+      visualScores[fbLoser].aura = 4;
     }
 
     // ── STAGE 2: Judgment — OpenRouter → Groq → Cerebras ──────────────────
@@ -364,7 +380,7 @@ Respond only with valid JSON.`,
       },
       {
         role: 'user',
-        content: `Given these attractiveness scores and observations for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy category scores EXACTLY as given\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence referencing the actual physical trait that decided it (use the observation text)\n- verdict: Exactly 4 sentences. Write like a savage human critic with zero filter. Sentence 1: Open with something specific and brutal — a single observation that immediately establishes who won and why. Sentence 2: Dig into the loser's biggest flaw with a specific, creative insult that references an actual visible trait. Sentence 3: Back up the winner with a concrete strength — something specific you can see, not a generic compliment. Sentence 4: Close with a final savage summary that compares both people in one damning line. Every verdict must feel completely different from the last — vary your structure, your tone, your opening. Never sound like a template.\n- reasons_for_win: 4 reasons the winner beat the loser. Each reason must be one punchy sentence that names a SPECIFIC visible trait — not a category label. Do not write "stronger jawline" — write "his jaw actually has definition instead of blending into his neck." Do not write "better skin" — write "her skin doesn't look like it's been through a war." Do not write "higher aura" — write "she walks into a room and people notice — he walks in and the furniture notices nothing." Each reason must be distinct, specific, and slightly savage. No two reasons should sound similar in structure. These are the receipts — they back up the verdict with actual detail.\n\nReturn ONLY:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"4-sentence brutal verdict following the specific Sentence 1-4 structure.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
+        content: `Given these attractiveness scores and observations for mode "${mode}":\n${JSON.stringify(visualScores, null, 2)}\n\nRules:\n- Copy ALL six category scores EXACTLY as given from the input — face_card, body, style, glow, expression, aura. Do not invent, round, or change any score. Calculate total as the sum of these exact six numbers × (100/60), rounded to nearest integer.\n- Calculate total as: sum of all 6 scores × (100/60), round to nearest integer\n- Pick winner based on higher total\n- Margin = difference between totals\n- winning_edge: one sharp sentence referencing the actual physical trait that decided it (use the observation text)\n- verdict: Exactly 4 sentences. Write like a savage human critic with zero filter. Sentence 1: Open with something specific and brutal — a single observation that immediately establishes who won and why. Sentence 2: Dig into the loser's biggest flaw with a specific, creative insult that references an actual visible trait. Sentence 3: Back up the winner with a concrete strength — something specific you can see, not a generic compliment. Sentence 4: Close with a final savage summary that compares both people in one damning line. Every verdict must feel completely different from the last — vary your structure, your tone, your opening. Never sound like a template.\n- reasons_for_win: 4 reasons the winner beat the loser. Each reason must be one punchy sentence that names a SPECIFIC visible trait — not a category label. Do not write "stronger jawline" — write "his jaw actually has definition instead of blending into his neck." Do not write "better skin" — write "her skin doesn't look like it's been through a war." Do not write "higher aura" — write "she walks into a room and people notice — he walks in and the furniture notices nothing." Each reason must be distinct, specific, and slightly savage. No two reasons should sound similar in structure. These are the receipts — they back up the verdict with actual detail.\n\nReturn ONLY:\n{"winner":"A","scores":{"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"total":0}},"margin":0,"winning_edge":"One sharp sentence.","verdict":"4-sentence brutal verdict following the specific Sentence 1-4 structure.","reasons_for_win":["reason 1","reason 2","reason 3","reason 4"]}`,
       },
     ];
 
@@ -385,6 +401,11 @@ Respond only with valid JSON.`,
       const totalA = Math.round(Object.values(visualScores.A).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) * (100 / 60));
       const totalB = Math.round(Object.values(visualScores.B).filter(v => typeof v === 'number').reduce((a, b) => (a as number) + (b as number), 0) * (100 / 60));
       const aWins = totalA >= totalB;
+      const winnerObs = visualScores[aWins ? 'A' : 'B'].observation || '';
+      const loserObs = visualScores[aWins ? 'B' : 'A'].observation || '';
+      const winnerStrength = winnerObs.match(/Strength: ([^.]+)/)?.[1] || 'stronger physical presence';
+      const loserWeakness = loserObs.match(/Weakness: ([^.]+)/)?.[1] || 'visible physical weaknesses';
+
       judgment = {
         winner: aWins ? 'A' : 'B',
         scores: {
@@ -392,9 +413,14 @@ Respond only with valid JSON.`,
           B: { ...visualScores.B, total: totalB },
         },
         margin: Math.abs(totalA - totalB),
-        winning_edge: aWins ? 'Superior facial structure and bone definition.' : 'Better overall presentation and grooming.',
-        verdict: 'The winner displays a significantly more refined aesthetic and better physical symmetry.',
-        reasons_for_win: ['Stronger bone structure', 'Clearer skin quality', 'Better overall style', 'Higher visual aura']
+        winning_edge: `The winner's ${winnerStrength} was the deciding factor in this matchup.`,
+        verdict: `One of these people walked in with ${winnerStrength} and the other walked in with ${loserWeakness}. The gap is real and visible — this wasn't close. The winner carries themselves with a physical edge that the loser simply doesn't have. It's not about the photo — it's about what's in front of the camera.`,
+        reasons_for_win: [
+          `The winner's ${winnerStrength} gave them an immediate visual advantage.`,
+          `The loser's ${loserWeakness} dragged their score down across multiple categories.`,
+          `On face card alone, the winner scored ${aWins ? totalA : totalB > 0 ? Math.round((aWins ? visualScores.A : visualScores.B).face_card) : 6} vs the loser's ${Math.round((aWins ? visualScores.B : visualScores.A).face_card)} — a clear structural gap.`,
+          `The overall score gap of ${Math.abs(totalA - totalB)} points reflects a genuine difference in attractiveness, not a close call.`
+        ]
       };
     }
     log('Stage 2 complete');
