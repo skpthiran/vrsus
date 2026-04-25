@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Flame } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getRatingPool, submitRating, RatePhoto } from '../lib/ratings';
+import { getRatingPool, submitRating, getPhotoAvgRating, RatePhoto } from '../lib/ratings';
 
 const SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -27,6 +27,7 @@ export default function RatePage() {
   const [hoveredScore, setHoveredScore] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
   const [direction, setDirection] = useState<'rate' | 'skip'>('rate');
+  const [reveal, setReveal] = useState<{ avg: number; total: number; yourScore: number } | null>(null);
 
   useEffect(() => {
     getRatingPool(50).then(data => {
@@ -41,21 +42,33 @@ export default function RatePage() {
   const handleScore = async (score: number) => {
     if (!current || submitting || animating) return;
     setSubmitting(true);
-    setDirection('rate');
-    setAnimating(true);
 
+    // Submit rating
     await submitRating(current.duelId, current.photoUrl, score, user?.id || null);
     setRated(r => r + 1);
 
+    // Fetch community average (includes the vote just submitted)
+    const community = await getPhotoAvgRating(current.photoUrl);
+    setReveal({
+      avg: community?.avg ?? score,
+      total: community?.total ?? 1,
+      yourScore: score,
+    });
+
+    // Auto-advance after 1.8 seconds
     setTimeout(() => {
-      if (index + 1 >= pool.length) {
-        setDone(true);
-      } else {
-        setIndex(i => i + 1);
-      }
-      setAnimating(false);
-      setSubmitting(false);
-    }, 300);
+      setReveal(null);
+      setAnimating(true);
+      setTimeout(() => {
+        if (index + 1 >= pool.length) {
+          setDone(true);
+        } else {
+          setIndex(i => i + 1);
+        }
+        setAnimating(false);
+        setSubmitting(false);
+      }, 300);
+    }, 1800);
   };
 
   const handleSkip = () => {
@@ -164,6 +177,48 @@ export default function RatePage() {
 
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+          {reveal && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm animate-fadeIn">
+              <div className="text-center px-8">
+                {/* Community score */}
+                <div className="mb-6">
+                  <div className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Community</div>
+                  <div className="font-display font-black text-7xl text-white">{reveal.avg}</div>
+                  <div className="text-white/40 text-sm mt-1">{reveal.total} {reveal.total === 1 ? 'rating' : 'ratings'}</div>
+                </div>
+
+                {/* Divider */}
+                <div className="w-16 h-px bg-white/20 mx-auto mb-6" />
+
+                {/* Your score vs community */}
+                <div className="flex items-center justify-center gap-6">
+                  <div className="text-center">
+                    <div className={`font-black text-3xl ${scoreLabel(reveal.yourScore).color}`}>{reveal.yourScore}</div>
+                    <div className="text-white/30 text-xs mt-0.5">You</div>
+                  </div>
+                  <div className="text-white/20 font-bold text-xl">vs</div>
+                  <div className="text-center">
+                    <div className="font-black text-3xl text-white">{reveal.avg}</div>
+                    <div className="text-white/30 text-xs mt-0.5">Crowd</div>
+                  </div>
+                </div>
+
+                {/* Taste comparison line */}
+                <div className="mt-6">
+                  {reveal.yourScore > reveal.avg + 1 && (
+                    <p className="text-lime-400 text-sm font-bold">You rate warmer than the crowd 🔥</p>
+                  )}
+                  {reveal.yourScore < reveal.avg - 1 && (
+                    <p className="text-blue-400 text-sm font-bold">You're a harsher judge than most ❄️</p>
+                  )}
+                  {Math.abs(reveal.yourScore - reveal.avg) <= 1 && (
+                    <p className="text-white/50 text-sm font-bold">Your taste is on point with the crowd ✓</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Score preview on hover */}
           {hoveredScore && (

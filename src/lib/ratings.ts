@@ -71,3 +71,14 @@ export async function getUserAvgRating(userId: string): Promise<number | null> {
   const avg = data.reduce((sum, r) => sum + r.score, 0) / data.length;
   return Math.round(avg * 10) / 10;
 }
+
+export async function getPhotoAvgRating(photoUrl: string): Promise<{ avg: number; total: number } | null> {
+  const { data, error } = await supabase
+    .from('ratings')
+    .select('score')
+    .eq('photo_url', photoUrl);
+
+  if (error || !data || data.length === 0) return null;
+  const avg = data.reduce((sum, r) => sum + r.score, 0) / data.length;
+  return { avg: Math.round(avg * 10) / 10, total: data.length };
+}
