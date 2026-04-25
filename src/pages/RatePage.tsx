@@ -37,17 +37,18 @@ export default function RatePage() {
   };
 
   useEffect(() => {
+    let active = true;
     getRatingPool(10).then(async initial => {
+      if (!active) return;
       if (initial.length === 0) { setDone(true); setLoading(false); return; }
       setPool(initial);
       setLoading(false);
-      // Preload first photo immediately
       if (initial[0]?.photoUrl) preloadImage(initial[0].photoUrl);
 
-      // Fetch full pool in background
       const full = await getRatingPool(50);
-      setPool(full);
+      if (active) setPool(full);
     });
+    return () => { active = false; };
   }, []);
 
   // Preload next 2 photos whenever index changes

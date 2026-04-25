@@ -23,6 +23,7 @@ export function ResultsPage() {
   const [result, setResult] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [sharing, setSharing] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
 
   React.useEffect(() => {
     async function loadResult() {
@@ -69,21 +70,19 @@ export function ResultsPage() {
 
   // Champion Update Logic
   React.useEffect(() => {
-    if (!result || !result.id) return;
-    
-    const challengeOf = sessionStorage.getItem('vrsus_pending_challenge_of');
-    if (challengeOf && id === result.id) {
-      const challengerId = result.user_id;
-      if (challengerId) {
-        const scoreA = result.scores?.A?.total || 0;
-        const scoreB = result.scores?.B?.total || 0;
-        const challengerWon = result.winner === 'A' ? scoreA > scoreB : scoreB > scoreA;
-        
-        updateChampionAfterDuel(result.id, challengerId, challengerWon, challengeOf);
-        sessionStorage.removeItem('vrsus_pending_challenge_of');
-      }
-    }
-  }, [result, id]);
+    if (!result || !user?.id || !result.id) return;
+
+    // Read challengeOf from result object — sessionStorage is already cleared by AnalyzingPage
+    const challengeOf = result.challengeOf || result.challenge_of;
+    if (!challengeOf) return;
+
+    const scoreA = result.scores?.A?.total ?? 0;
+    const scoreB = result.scores?.B?.total ?? 0;
+    const challengerWon = result.winner === 'A' ? scoreA > scoreB : scoreB > scoreA;
+
+    updateChampionAfterDuel(result.id, user.id, challengerWon, challengeOf)
+      .catch(console.error);
+  }, [result?.id, user?.id]);
 
   if (loading) return (
     <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -136,7 +135,8 @@ export function ResultsPage() {
   const handleCopyLink = () => {
     const shareUrl = `${window.location.origin}/results/${result.id || ''}`;
     navigator.clipboard.writeText(shareUrl);
-    alert('Link copied to clipboard!');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleChallenge = () => {
@@ -382,10 +382,10 @@ export function ResultsPage() {
                     <Share2 className="mr-2 w-5 h-5" />
                     {sharing ? 'Generating...' : 'Share to Socials'}
                  </Button>
-                 <Button size="lg" variant="outline" className="glass" onClick={handleCopyLink}>
-                    <Copy className="mr-2 w-5 h-5" />
-                    Copy Link
-                 </Button>
+                  <Button size="lg" variant="outline" className="glass" onClick={handleCopyLink}>
+                     {copied ? <CheckCircle2 className="mr-2 w-5 h-5 text-green-400" /> : <Copy className="mr-2 w-5 h-5" />}
+                     {copied ? 'Copied!' : 'Copy Link'}
+                  </Button>
              </div>
           </div>
 

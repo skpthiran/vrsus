@@ -51,9 +51,11 @@ export async function submitRating(
   });
 
   // Track by photo URL — each photo is rated independently
-  const ratedPhotos = JSON.parse(localStorage.getItem('vrsus_rated_photos') || '[]') as string[];
+  let ratedPhotos = JSON.parse(localStorage.getItem('vrsus_rated_photos') || '[]') as string[];
   if (!ratedPhotos.includes(photoUrl)) {
     ratedPhotos.push(photoUrl);
+    // Keep only last 500 to avoid localStorage quota issues
+    if (ratedPhotos.length > 500) ratedPhotos = ratedPhotos.slice(-500);
     localStorage.setItem('vrsus_rated_photos', JSON.stringify(ratedPhotos));
   }
 }

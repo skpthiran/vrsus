@@ -37,15 +37,11 @@ export async function saveDuelToSupabase(record: DuelRecord, userId: string): Pr
     const winnerScore = Math.max(record.scores.A.total, record.scores.B.total);
     await updateStreak(userId, winnerScore);
 
-    // Increment defenses on original duel if this is a challenge
-    if (record.challenge_of) {
-      await supabase.rpc('increment_defenses', { duel_id: record.challenge_of });
-      // Fallback if RPC isn't set up yet:
-      // await supabase.from('duels').update({ defenses: supabase.raw('defenses + 1') }).eq('id', record.challenge_of);
-      // Actually, let's use a simpler update for now to avoid needing an RPC immediately
-      const { data: original } = await supabase.from('duels').select('defenses').eq('id', record.challenge_of).single();
+    // If it's a challenge, update defenses on the original duel
+    if (record.challengeOf) {
+      const { data: original } = await supabase.from('duels').select('defenses').eq('id', record.challengeOf).single();
       if (original) {
-        await supabase.from('duels').update({ defenses: (original.defenses || 0) + 1 }).eq('id', record.challenge_of);
+        await supabase.from('duels').update({ defenses: (original.defenses || 0) + 1 }).eq('id', record.challengeOf);
       }
     }
 
@@ -74,8 +70,6 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
     return [];
   }
 
-  console.log('[Explore] fetched:', data?.length);
-  
   return (data || []).map(d => ({
     id: d.id,
     createdAt: d.created_at,
@@ -112,8 +106,6 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
     return [];
   }
 
-  console.log(`[VRSUS] getUserDuels found ${data?.length || 0} records for user ${userId}`);
-  
   return (data || []).map(d => ({
     id: d.id,
     createdAt: d.created_at,
@@ -245,18 +237,17 @@ export async function updateStreak(userId: string, winnerScore: number) {
   // Fetch current profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('current_streak, best_streak, total_duels')
+    .select('current_streak, best_streak')
     .eq('id', userId)
     .single();
 
   const isHighScore = winnerScore >= 70;
   const currentStreak = isHighScore ? (profile?.current_streak || 0) + 1 : 0;
   const bestStreak = Math.max(currentStreak, profile?.best_streak || 0);
-  const totalDuels = (profile?.total_duels || 0) + 1;
 
   await supabase
     .from('profiles')
-    .update({ current_streak: currentStreak, best_streak: bestStreak, total_duels: totalDuels })
+    .update({ current_streak: currentStreak, best_streak: bestStreak })
     .eq('id', userId);
 
   return { currentStreak, bestStreak };
@@ -274,7 +265,7 @@ export async function getWeeklyLeaderboard() {
   if (error) throw error;
 
   // Aggregate per user
-  const map: Record<string, { display_name: string; best_score: number; total_duels: number }> = {};
+  const map: Record<string, { display_name: string; best_score: number }> = {};
   for (const d of data || []) {
     const uid = d.user_id;
     if (!uid) continue;

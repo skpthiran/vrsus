@@ -79,6 +79,7 @@ export function CreateDuelPage() {
 
   const handleAnalyze = async () => {
     if (!slotA.base64 || !slotB.base64) return;
+    setLoading(true);
     
     // Store in session storage for the Analyzing page to pick up
     sessionStorage.setItem('vrsus_pending_a', slotA.base64);
