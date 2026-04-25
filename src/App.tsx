@@ -10,6 +10,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuthPage } from './pages/AuthPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import RatePage from './pages/RatePage';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/rate" element={<RatePage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

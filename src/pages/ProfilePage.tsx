@@ -8,6 +8,7 @@ import { getHistory } from '../lib/history';
 import { cn } from '../lib/utils';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { calculateRank } from '../lib/ranks';
+import { getUserAvgRating } from '../lib/ratings';
 
 function DuelRow({ record, onClick }: { record: any, onClick: () => void, key?: any }) {
   const imgRef = React.useRef<HTMLDivElement>(null);
@@ -83,6 +84,7 @@ export function ProfilePage() {
   const [displayName, setDisplayName] = React.useState('');
   const [profile, setProfile] = React.useState<any>(null);
   const [streak, setStreak] = React.useState({ current: 0, best: 0 });
+  const [avgRating, setAvgRating] = React.useState<number | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [page, setPage] = React.useState(0);
   const [hasMore, setHasMore] = React.useState(true);
@@ -142,6 +144,9 @@ export function ProfilePage() {
           current: profileData?.current_streak || 0,
           best: profileData?.best_streak || 0,
         });
+
+        const rating = await getUserAvgRating(user.id);
+        setAvgRating(rating);
       }
     }
     loadProfile();
@@ -291,9 +296,9 @@ export function ProfilePage() {
                     <div className="grid grid-cols-2 gap-3">
                       {[
                         { label: 'Win Rate', value: `${winRate}%`, emoji: '🏆' },
+                        { label: 'Hot Score', value: avgRating !== null ? avgRating.toFixed(1) : '-', emoji: '🔥' },
                         { label: 'Avg Score', value: profile.avg_score ?? 0, emoji: '📊' },
                         { label: 'Best Score', value: profile.best_score ?? 0, emoji: '⭐' },
-                        { label: 'Streak', value: `${profile.current_streak ?? 0} 🔥`, emoji: '🔥' },
                       ].map(stat => (
                         <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
                           <p className="text-2xl font-display font-black text-white">{stat.value}</p>
