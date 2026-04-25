@@ -261,14 +261,18 @@ Respond only with valid JSON.`,
             type: 'text',
             text: `Score each person independently — imagine you are only looking at one person at a time.
 
-SCORING SCALE (apply to each person alone, not relative to the other):
-- 1-2: Severely unattractive. Major genetic issues, extreme skin problems, no redeemable features.
-- 3-4: Clearly below average. Weak bone structure, poor skin, bad grooming, forgettable face.
-- 5: Average. Nothing notably good or bad. Forgettable.
-- 6: Slightly above average. One or two genuinely good features.
-- 7: Noticeably attractive. Clear strengths, above average genetics.
-- 8: Legitimately hot. Strong bone structure, clear skin, commanding presence.
-- 9-10: Model tier. Reserved for elite genetics only.
+SCORING SCALE — read this carefully, most people score 4-6:
+- 1-2: Severely unattractive. Extreme skin conditions, very weak facial structure, nothing working in their favor.
+- 3: Below average. Multiple visible flaws — weak jaw, bad skin, poor grooming. Clearly not attractive.
+- 4: Slightly below average. One or two okay features but overall forgettable and unremarkable.
+- 5: Dead average. The most common score. Looks like most people you see on the street. Nothing bad, nothing good.
+- 6: Slightly above average. Genuinely one good feature — a nice smile, decent jawline, clear skin. Not hot, but noticeable.
+- 7: Attractive. Multiple good features working together. People notice them. Above average genetics. Rare — do not give this freely.
+- 8: Hot. Turns heads. Strong jawline, clear skin, good body, real presence. Very rare in a random photo.
+- 9: Model tier. Near-perfect features. You would stop and look twice on the street. Extremely rare.
+- 10: Reserved for once-in-a-generation looks. Do not use this.
+
+CRITICAL: A normal person who takes decent photos is a 4-5. A pretty person with good features is a 6. Most people you see in everyday life are 4-5. Only give 7+ if the person genuinely stands out. If you are giving both people scores above 6 in most categories, you are scoring too generously — recalibrate down.
 
 WHAT TO SCORE (the person, not the photo):
 - face_card: Assess bone structure, jawline definition, symmetry, eye shape, nose, and overall facial harmony. Even when two people look superficially similar, there are always real differences — one will have a sharper jaw, wider eyes, better symmetry, stronger nose bridge, or more defined cheekbones. Look hard and find the real difference. Never give two different people the exact same face_card score — there is always a winner and a loser on facial structure.
