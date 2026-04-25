@@ -278,7 +278,7 @@ WHAT TO SCORE (the person, not the photo):
 - expression: Confidence, energy, charisma, eye contact
 - aura: Overall magnetism — would a stranger look twice at this person specifically?
 
-observation: "Strength: [specific physical trait — e.g. sharp jawline, visible abs, clear symmetrical eyes]. Weakness: [specific physical flaw visible on the person — e.g. weak chin, visible acne, poor muscle definition]. Never mention lighting, angle, or camera quality in the observation."
+observation: "Gender: [Man/Woman]. Strength: [specific physical trait]. Weakness: [specific physical flaw visible on the person]. Never mention lighting, angle, or camera quality in the observation."
 
 Return ONLY:
 {"A":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"Strength: X. Weakness: Y."},"B":{"face_card":0,"body":0,"style":0,"glow":0,"expression":0,"aura":0,"observation":"Strength: X. Weakness: Y."}}`,
@@ -360,6 +360,8 @@ Your verdicts must:
 - Never repeat the same sentence structure across different duels. Every verdict must feel handcrafted.
 
 Banned phrases you must NEVER use: "commanding presence", "overall appeal", "bone structure", "drag the score down", "no competition", "objectively better", "significant weaknesses", "overall polish", "lackluster", "distinguishing factor", "default superiority", "anchor context", "aligns with".
+
+CRITICAL: The observation text for each person includes their gender ("Gender: Man" or "Gender: Woman"). You MUST use the correct pronouns — he/him for men, she/her for women. Never misgender a subject. Read the observation carefully before writing the verdict.
 
 Respond only with valid JSON.`,
       },
