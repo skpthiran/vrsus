@@ -77,14 +77,12 @@ export async function getTopScores(limit = 10): Promise<TopDuel[]> {
   const { data, error } = await supabase
     .from('duels')
     .select(`
-      id, user_id, score_a, score_b, winner, 
-      image_a_url, image_b_url, summary, created_at,
-      profiles:user_id (username, avatar_url)
+      id, user_id, score_a, score_b, winner,
+      image_a_url, image_b_url, summary, created_at
     `)
     .eq('is_public', true)
-    .not('user_id', 'is', null)
     .order('score_a', { ascending: false })
-    .limit(50);
+    .limit(100);
 
   if (error || !data) return [];
 
@@ -98,14 +96,14 @@ export async function getTopScores(limit = 10): Promise<TopDuel[]> {
   );
 
   for (const d of sorted) {
-    if (seen.has(d.user_id)) continue;
-    seen.add(d.user_id);
-    const profile = d.profiles as any;
+    const uid = d.user_id || d.id; // use duel id as fallback key if no user
+    if (seen.has(uid)) continue;
+    seen.add(uid);
     top.push({
       id: d.id,
-      userId: d.user_id,
-      username: profile?.username || 'Anonymous',
-      avatarUrl: profile?.avatar_url || null,
+      userId: d.user_id || '',
+      username: 'Anonymous',
+      avatarUrl: null,
       scoreA: d.score_a,
       scoreB: d.score_b,
       winner: d.winner,
@@ -116,6 +114,25 @@ export async function getTopScores(limit = 10): Promise<TopDuel[]> {
       topScore: Math.max(d.score_a, d.score_b),
     });
     if (top.length >= limit) break;
+  }
+
+  // Fetch profiles for users that have a user_id
+  const userIds = top.filter(t => t.userId).map(t => t.userId);
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', userIds);
+    
+    if (profiles) {
+      const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
+      top.forEach(t => {
+        if (t.userId && profileMap[t.userId]) {
+          t.username = profileMap[t.userId].username || 'Anonymous';
+          t.avatarUrl = profileMap[t.userId].avatar_url || null;
+        }
+      });
+    }
   }
 
   return top;

@@ -109,90 +109,97 @@ export default function LeaderboardPage() {
             <div className="px-4">
               {champion ? (
                 <div className="rounded-2xl overflow-hidden border border-yellow-400/40 bg-neutral-950">
-                  {/* Hero Photo */}
-                  <div className="relative h-72 bg-neutral-900">
-                    {champion.bestPhoto ? (
-                      <img src={champion.bestPhoto} className="w-full h-full object-cover object-top" alt="Champion" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-white/10 font-black text-8xl">👑</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/30 to-transparent" />
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-yellow-400 text-black text-xs font-black px-3 py-1.5 rounded-full">
-                        👑 REIGNING CHAMPION
-                      </span>
-                    </div>
-                    {champion.defenses > 0 && (
-                      <div className="absolute top-4 right-4">
-                        <span className="bg-black/60 text-yellow-400 text-xs font-bold px-3 py-1.5 rounded-full border border-yellow-400/30">
-                          🛡️ {champion.defenses} defenses
+                  {/* Desktop: side by side. Mobile: stacked */}
+                  <div className="flex flex-col md:flex-row">
+                    {/* Photo */}
+                    <div className="relative md:w-80 h-72 md:h-auto bg-neutral-900 flex-shrink-0">
+                      {champion.bestPhoto ? (
+                        <img
+                          src={champion.bestPhoto}
+                          className="w-full h-full object-cover object-top"
+                          alt="Champion"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-white/10 font-black text-8xl">👑</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-neutral-950" />
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-yellow-400 text-black text-xs font-black px-3 py-1.5 rounded-full">
+                          👑 REIGNING CHAMPION
                         </span>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-5">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {champion.avatarUrl ? (
-                          <img src={champion.avatarUrl} className="w-full h-full object-cover" alt="" />
-                        ) : (
-                          <span className="text-yellow-400 font-black text-sm">
-                            {champion.username.charAt(0).toUpperCase()}
+                      {champion.defenses > 0 && (
+                        <div className="absolute top-4 right-4">
+                          <span className="bg-black/60 text-yellow-400 text-xs font-bold px-3 py-1.5 rounded-full border border-yellow-400/30">
+                            🛡️ {champion.defenses} defenses
                           </span>
-                        )}
-                      </div>
-                      <div>
-                        <h2 className="font-black text-xl text-white">{champion.username}</h2>
-                        <p className="text-white/40 text-xs">
-                          Champion since {new Date(champion.crownedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-2 mb-5">
-                      {[
-                        { label: 'Peak Score', value: champion.bestScore, gold: true },
-                        { label: 'Total Wins', value: champion.totalWins, gold: false },
-                        { label: 'Defenses', value: champion.defenses, gold: false },
-                      ].map(stat => (
-                        <div key={stat.label} className="bg-white/5 rounded-xl p-3 text-center">
-                          <div className={`font-black text-2xl ${stat.gold ? 'text-yellow-400' : 'text-white'}`}>
-                            {stat.value}
-                          </div>
-                          <div className="text-white/30 text-xs mt-0.5">{stat.label}</div>
                         </div>
-                      ))}
+                      )}
                     </div>
 
-                    {/* CTA */}
-                    {!user && (
-                      <button onClick={() => navigate('/auth')}
-                        className="w-full bg-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/15 transition-colors">
-                        Sign in to Challenge
-                      </button>
-                    )}
-                    {user && user.id === champion.userId && (
-                      <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-xl p-3 text-center">
-                        <p className="text-yellow-400 font-bold text-sm">👑 You hold the crown. Defend it.</p>
+                    {/* Info */}
+                    <div className="flex-1 p-6 flex flex-col justify-center">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {champion.avatarUrl ? (
+                            <img src={champion.avatarUrl} className="w-full h-full object-cover" alt="" />
+                          ) : (
+                            <span className="text-yellow-400 font-black text-lg">
+                              {champion.username.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <h2 className="font-black text-2xl md:text-3xl text-white">{champion.username}</h2>
+                          <p className="text-white/40 text-sm">
+                            Champion since {new Date(champion.crownedAt).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                    {user && user.id !== champion.userId && (
-                      <div>
-                        <button onClick={handleChallenge}
-                          className="w-full bg-yellow-400 text-black font-black py-3.5 rounded-xl text-sm hover:bg-yellow-300 transition-colors">
-                          ⚔️ CHALLENGE CHAMPION
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-3 mb-6">
+                        {[
+                          { label: 'Peak Score', value: champion.bestScore, gold: true },
+                          { label: 'Total Wins', value: champion.totalWins, gold: false },
+                          { label: 'Defenses', value: champion.defenses, gold: false },
+                        ].map(stat => (
+                          <div key={stat.label} className="bg-white/5 rounded-xl p-4 text-center">
+                            <div className={`font-black text-3xl ${stat.gold ? 'text-yellow-400' : 'text-white'}`}>
+                              {stat.value}
+                            </div>
+                            <div className="text-white/30 text-xs mt-1">{stat.label}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* CTA */}
+                      {!user && (
+                        <button onClick={() => navigate('/auth')}
+                          className="w-full bg-white/10 text-white font-bold py-3 rounded-xl text-sm hover:bg-white/15 transition-colors">
+                          Sign in to Challenge
                         </button>
-                        {challengeMsg && (
-                          <p className="text-white/40 text-xs text-center mt-2">{challengeMsg}</p>
-                        )}
-                        <p className="text-white/20 text-xs text-center mt-1">Requires 3+ duels</p>
-                      </div>
-                    )}
+                      )}
+                      {user && user.id === champion.userId && (
+                        <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-xl p-4 text-center">
+                          <p className="text-yellow-400 font-bold">👑 You hold the crown. Defend it.</p>
+                        </div>
+                      )}
+                      {user && user.id !== champion.userId && (
+                        <div>
+                          <button onClick={handleChallenge}
+                            className="w-full bg-yellow-400 text-black font-black py-4 rounded-xl hover:bg-yellow-300 transition-colors">
+                            ⚔️ CHALLENGE CHAMPION
+                          </button>
+                          {challengeMsg && (
+                            <p className="text-white/40 text-xs text-center mt-2">{challengeMsg}</p>
+                          )}
+                          <p className="text-white/20 text-xs text-center mt-1">Requires 3+ duels</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
