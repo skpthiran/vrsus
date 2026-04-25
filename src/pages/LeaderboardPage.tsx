@@ -63,9 +63,6 @@ export default function LeaderboardPage() {
     if (topLoadingMore || !topHasMore) return;
     setTopLoadingMore(true);
     const page = topPageRef.current;
-    
-    // Artificial delay to show loader
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     const nextBatch = allTopDuelsRef.current.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
     

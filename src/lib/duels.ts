@@ -65,10 +65,7 @@ export async function getPublicDuels(page = 0, pageSize = 10) {
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  if (error) {
-    console.error('[Explore] fetch error:', error.message);
-    return [];
-  }
+  if (error) return [];
 
   return (data || []).map(d => ({
     id: d.id,
@@ -101,10 +98,7 @@ export async function getUserDuels(userId: string, page = 0, pageSize = 10) {
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  if (error) {
-    console.error('[VRSUS] getUserDuels error:', error.message);
-    return [];
-  }
+  if (error) return [];
 
   return (data || []).map(d => ({
     id: d.id,
@@ -134,10 +128,7 @@ export async function getDuelById(duelId: string) {
     .eq('id', duelId)
     .single();
 
-  if (error) {
-    console.error('getDuelById error:', error);
-    return null;
-  }
+  if (error) return null;
 
   if (!data) return null;
 
@@ -160,10 +151,7 @@ export async function toggleDuelPrivacy(duelId: string, isPublic: boolean) {
     .update({ is_public: isPublic })
     .eq('id', duelId);
 
-  if (error) {
-    console.error('toggleDuelPrivacy error:', error);
-    return false;
-  }
+  if (error) return false;
   return true;
 }
 
@@ -258,7 +246,7 @@ export async function getWeeklyLeaderboard() {
 
   const { data, error } = await supabase
     .from('duels')
-    .select('user_id, score_a, score_b, profiles(display_name)')
+    .select('user_id, score_a, score_b, profiles(username)')
     .eq('is_public', true)
     .gte('created_at', oneWeekAgo);
 
@@ -283,8 +271,8 @@ export async function getWeeklyLeaderboard() {
     }
     
     const best = Math.max(sa || 0, sb || 0);
-    const name = (d.profiles as any)?.display_name || 'Anonymous';
-    if (!map[uid]) map[uid] = { display_name: name, best_score: 0, total_duels: 0 };
+    const name = (d.profiles as any)?.username || 'Anonymous';
+    if (!map[uid]) map[uid] = { username: name, best_score: 0, total_duels: 0 };
     if (best > map[uid].best_score) map[uid].best_score = best;
     map[uid].total_duels++;
   }

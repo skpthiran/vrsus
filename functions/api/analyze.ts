@@ -84,11 +84,12 @@ async function uploadImageToStorage(
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
-  const FALLBACK_URL = 'https://azufpxcpbkcrqapfislu.supabase.co';
-  const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6dWZweGNwYmtjcnFhcGZpc2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4OTczMjUsImV4cCI6MjA5MjQ3MzMyNX0.VY0KpiuayrbXcYhVmahRiphye-kOGoMDqWTePByxnqHM';
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
 
-  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || env.PUBLIC_SUPABASE_URL || FALLBACK_URL;
-  const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY || env.PUBLIC_SUPABASE_ANON_KEY || FALLBACK_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return Response.json({ error: 'Missing Supabase configuration' }, { status: 500, headers: corsHeaders });
+  }
 
   // Debug check for environment variables and payload
   console.log('[VRSUS] ENV CHECK:', {
@@ -107,7 +108,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  // supabaseUrl and supabaseKey are already defined above with fallbacks
+  // supabaseUrl and supabaseKey are already validated above
   const openrouterKey = env.OPENROUTER_API_KEY;
   const groqKey = env.GROQ_API_KEY;
   const cerebrasKey = env.CEREBRAS_API_KEY;

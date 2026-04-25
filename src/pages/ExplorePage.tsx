@@ -37,7 +37,6 @@ export function ExplorePage() {
     const currentPage = pageRef.current;
     try {
       const next = await getPublicDuels(currentPage, PAGE_SIZE);
-      console.log(`[Explore] page: ${currentPage}, fetched: ${next.length}`);
       
       if (next.length < PAGE_SIZE) setHasMore(false);
 
@@ -84,7 +83,6 @@ export function ExplorePage() {
       setVotes(voteMap);
       setLoading(false);
     }).catch(err => {
-      console.error('[Explore] initial load failed:', err);
       setLoading(false);
     });
   }, []);

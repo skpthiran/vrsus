@@ -38,6 +38,7 @@ export default function RatePage() {
 
   useEffect(() => {
     let active = true;
+
     getRatingPool(10).then(async initial => {
       if (!active) return;
       if (initial.length === 0) { setDone(true); setLoading(false); return; }
@@ -46,8 +47,17 @@ export default function RatePage() {
       if (initial[0]?.photoUrl) preloadImage(initial[0].photoUrl);
 
       const full = await getRatingPool(50);
-      if (active) setPool(full);
+      if (!active) return;
+
+      // Merge: never replace photos the user has already seen
+      // Append only new photos not already in the pool
+      setPool(prev => {
+        const seenUrls = new Set(prev.map(p => p.photoUrl));
+        const newOnly = full.filter(p => !seenUrls.has(p.photoUrl));
+        return [...prev, ...newOnly];
+      });
     });
+
     return () => { active = false; };
   }, []);
 
