@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Swords, History, Compass, User } from 'lucide-react';
+import { Swords, History, Compass, User, Trophy } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { path: '/duel', label: 'Duel', icon: Swords },
   { path: '/history', label: 'History', icon: History },
   { path: '/explore', label: 'Explore', icon: Compass },
+  { path: '/leaderboard', label: 'Ranks', icon: Trophy },
   { path: '/profile', label: 'Profile', icon: User },
 ];
 
@@ -97,7 +98,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom navigation */}
       {!isLanding && (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border">
-          <div className="grid grid-cols-4 h-16">
+          <div className="grid grid-cols-5 h-16">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
             const active = location.pathname.startsWith(item.path);

@@ -9,6 +9,7 @@ import { ExplorePage } from './pages/ExplorePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuthPage } from './pages/AuthPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/results/:id?" element={<ResultsPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
