@@ -2,5 +2,7 @@ node_modules/
 dist/
 .env.local
 .env
+.dev.vars
 *.local
 .DS_Store
+scratch/
